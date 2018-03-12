@@ -1,0 +1,5 @@
+<?php
+
+$geokrety_www = "/opt/geokrety/";
+
+$kocham_kaczynskiego = "xxx";

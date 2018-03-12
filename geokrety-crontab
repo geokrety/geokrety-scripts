@@ -1,0 +1,62 @@
+MAIL=geokrety@kumy.net
+SHELL=/bin/bash
+HOME=/opt/geokrety
+LOGFILE=/var/log/cron.log
+
+# m h  dom mon dow command
+* * * * * root date >> "$LOGFILE"
+
+*/10 * * * * root cd $HOME && echo ./czysc.php >> "$LOGFILE" && /usr/local/bin/php ./czysc.php >> "$LOGFILE" 2>&1
+51 * * * * root cd $HOME && echo ./obserwacje2.php >> "$LOGFILE" && /usr/local/bin/php ./obserwacje2.php >> "$LOGFILE" 2>&1
+
+# waypointy:
+
+3,13,23,33,43,53 * * * * root cd $HOME/waypointy/oc/ && echo /usr/local/bin/php ./xml2sql.php >> "$LOGFILE" && nice -n 13 /usr/local/bin/php ./xml2sql.php >> "$LOGFILE" 2>&1
+20 4    * * * root cd $HOME/waypointy/hu/ && echo ./gpx2sql.php >> "$LOGFILE" && nice -n 13 /usr/local/bin/php ./gpx2sql.php >> "$LOGFILE" 2>&1
+#######26 4    * * * root cd $HOME/waypointy/ro+trans/ && echo ./xml2sql.php >> "$LOGFILE" && nice -n 13 /usr/local/bin/php ./xml2sql.php >> "$LOGFILE" 2>&1
+################ TODO API changed
+36 4    * * * root cd $HOME/waypointy/wpg/ && echo ./gpx2sql-wpg.php >> "$LOGFILE" && nice -n 13 /usr/local/bin/php ./gpx2sql-wpg.php >> "$LOGFILE" 2>&1
+47 5    * * 2 root cd $HOME/waypointy/gpsgames && echo ./wpt >> "$LOGFILE" && nice -n 10 ./wpt >> "$LOGFILE" 2>&1
+52 5    * * * root cd $HOME/waypointy/ru/ && echo ./gpx2sql.php >> "$LOGFILE" && nice -n 10 /usr/local/bin/php ./gpx2sql.php >> "$LOGFILE" 2>&1
+######44 6,15 * * * root cd $HOME/waypointy/oc.com/ && echo ./oc.com >> "$LOGFILE" && nice -n 13 /usr/local/bin/php ./oc.com >> "$LOGFILE" 2>&1
+################ TODO API CHANGED
+
+
+39 7 * * * root cd $HOME/statystyki/ && echo ./apps_stats.php >> "$LOGFILE" && /usr/local/bin/php ./apps_stats.php >> "$LOGFILE" 2>&1
+13 0 1 * * root cd $HOME/wykresy/ && echo ./tabela_statystyki.php >> "$LOGFILE" && /usr/local/bin/php ./tabela_statystyki.php >> "$LOGFILE" 2>&1
+20 0 * * * root cd $HOME/wykresy/ && echo ./tabela_statystyki_rysuj.php >> "$LOGFILE" && /usr/local/bin/php ./tabela_statystyki_rysuj.php >> "$LOGFILE" 2>&1
+
+16 0 * * 4   root cd $HOME/wykresy/ && echo ./pie.php >> "$LOGFILE" && /usr/local/bin/php ./pie.php >> "$LOGFILE" 2>&1
+22 0 * * 2,6 root cd $HOME/wykresy/ && echo ./histogram.php >> "$LOGFILE" && /usr/local/bin/php ./histogram.php >> "$LOGFILE" 2>&1
+26 0 * * 2,6 root cd $HOME/wykresy/ && echo ./histogram-systemy.php >> "$LOGFILE" && /usr/local/bin/php ./histogram-systemy.php >> "$LOGFILE" 2>&1
+*/13 * * * * root cd $HOME/wykresy/ && echo ./wysokosc.php >> "$LOGFILE" && nice -n 1 /usr/local/bin/php ./wysokosc.php >> "$LOGFILE" 2>&1
+
+*/17 * * * * root cd $HOME/pop/ && echo ./procesuj.php >> "$LOGFILE" && /usr/local/bin/php ./procesuj.php >> "$LOGFILE"
+
+*/21  * * * * root cd $HOME/geonames/ && echo ./geonames-ruchy-alt.php >> "$LOGFILE" && timeout 300s /usr/local/bin/php ./geonames-ruchy-alt.php >> "$LOGFILE" 2>&1
+##### TODO use geo.kumy.org
+
+*/28 * * * * root cd $HOME/geonames/ && echo ./geonames-waypointy.php >> "$LOGFILE" && timeout 300s /usr/local/bin/php ./geonames-waypointy.php >> "$LOGFILE" 2>&1
+
+6,36 6-23 * * * root cd $HOME/statystyki/ && echo ./statystyczka.php >> "$LOGFILE" && nice -n 10 /usr/local/bin/php ./statystyczka.php >> "$LOGFILE" 2>&1
+36   0-5  * * * root cd $HOME/statystyki/ && echo ./statystyczka.php >> "$LOGFILE" && nice -n 14 /usr/local/bin/php ./statystyczka.php >> "$LOGFILE" 2>&1
+
+32 4 * * * root cd $HOME/statystyki/ && echo ./statystyki_nocne.sh >> "$LOGFILE" && nice -n 10 /usr/local/bin/php ./statystyki_nocne.sh >> "$LOGFILE" 2>&1
+32 4 * * * root cd $HOME/statystyki/ && echo ./ostatnie_ruchy.php >> "$LOGFILE" && /usr/local/bin/php ./ostatnie_ruchy.php >> "$LOGFILE" 2>&1 && echo ./lost.php >> "$LOGFILE" && /usr/local/bin/php ./lost.php >> "$LOGFILE" 2>&1 && echo ./country_stat.ph >> "$LOGFILE" && /usr/local/bin/php ./country_stat.php >> "$LOGFILE" 2>&1 && echo ./hubs.php >> "$LOGFILE" && /usr/local/bin/php ./hubs.php >> "$LOGFILE" 2>&1
+
+#spam search
+3,23,43 * * * * root cd $HOME/spam/ && echo ./spam_search.php >> "$LOGFILE" && getspamlist.sh >> "$LOGFILE" && nice -n 10 /usr/local/bin/php ./spam_search.php >> "$LOGFILE" 2>&1
+
+# rajdy
+2 0 * * * root cd $HOME/rajdy/ && echo ./sprawdz-status.php >> "$LOGFILE" && /usr/local/bin/php ./sprawdz-status.php >> "$LOGFILE" 2>&1
+
+#####38 0 * * 2,5,6 root cd $HOME/mapa-f && echo ./rob.sh >> "$LOGFILE" && nice -n 19 ./rob.sh >> "$LOGFILE" 2>&1
+#################TODO[34m| wine
+
+10 2 * * * root cd $HOME/ && echo ./static_xml.sh >> "$LOGFILE" && nice -n 10 ./static_xml.sh >> "$LOGFILE" 2>&1
+
+# mapy
+*/10 6-23 * * * root cd $HOME/mapa_statyczna_logow/ && echo ./ostatnie_logi.sh >> "$LOGFILE" && ./ostatnie_logi.sh >> "$LOGFILE" 2>&1
+*/30 0-5 * * * root cd $HOME/mapa_statyczna_logow/ && echo ./ostatnie_logi.sh >> "$LOGFILE" && ./ostatnie_logi.sh >> "$LOGFILE" 2>&1
+
+30 11 5 * * root cd $HOME/statystyki/ && echo aktywni_userzy.php >> "$LOGFILE" && nice -n 10 /usr/local/bin/php aktywni_userzy.php |tee out/aktywni_userzy.gnuplot && gnuplot aktywni_userzy.gnuplot >> "$LOGFILE" 2>&1

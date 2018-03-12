@@ -1,0 +1,36 @@
+[_id]
+ProductCode=1
+FID=39424
+[End]
+
+[_drawOrder]
+[end]
+
+
+
+
+[_point]
+Type=0x66
+SubType=0x03
+DAYXPM="16 16 3 1"
+" 	c None"
+".	c #000000"
+"X	c #0000cd"
+"     ......     "
+"     .XXXX.     "
+"     .XXXX.     "
+"     .XXXX.     "
+"     .XXXX.     "
+"   ...XXXX...   "
+"   .XXXXXXXX.   "
+"    .XXXXXX.    "
+"     .XXXX.     "
+"      .XX.      "
+"       ..       "
+"                "
+"...          ..."
+".X............X."
+".XXXXXXXXXXXXXX."
+"................"
+[end]
+

@@ -1,0 +1,10 @@
+REGEDIT4
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Garmin\MapSource\Families\confluence]
+"ID"=hex:00,9a
+"TYP"="Q:\\tools\\mapa-f\\przeciecia\\mapset\\conf.typ"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Garmin\MapSource\Families\confluence\1]
+"LOC"="Q:\\tools\\mapa-f\\przeciecia\\mapset\\"
+"BMAP"="Q:\\tools\\mapa-f\\przeciecia\\mapset\\confluence.img"
+"TDB"="Q:\\tools\\mapa-f\\przeciecia\\mapset\\confluence.tdb"

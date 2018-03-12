@@ -1,0 +1,6 @@
+#!/bin/bash
+#    gpsbabel [options] -i INTYPE -f INFILE -o OUTTYPE -F OUTFILE
+
+wget --output-document=./gpsgames.gpx "http://geocaching.gpsgames.org/cgi-bin/ge.pl?viewfinds=&viewhides=&country=&state=__&ZIP=&bytime=&byowner=&bylogger=&bywaypoint=&sortby=date&saveloc=&download=Download&downloadformat=GPX"
+/usr/bin/env php ./gd2sql.php
+rm ./gpsgames.gpx

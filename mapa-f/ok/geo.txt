@@ -1,0 +1,84 @@
+[_id]
+ProductCode=1
+FID=39452
+[End]
+
+[_drawOrder]
+[end]
+
+
+
+[_point]
+Type=0x66
+SubType=0x00
+DAYXPM="16 16 3 1"
+".	c None"
+"X	c #000000"
+"o	c #ffff00"
+".....XXXXXX....."
+".....XooooX....."
+".....XooooX....."
+".....XooooX....."
+".....XooooX....."
+"...XXXooooXXX..."
+"...XooooooooX..."
+"....XooooooX...."
+".....XooooX....."
+"......XooX......"
+".......XX......."
+"................"
+"XXX..........XXX"
+"XoXXXXXXXXXXXXoX"
+"XooooooooooooooX"
+"XXXXXXXXXXXXXXXX"
+[end]
+
+[_point]
+Type=0x66
+SubType=0x01
+DAYXPM="16 16 3 1"
+" 	c None"
+".	c #000000"
+"X	c #ff0000"
+"     ......     "
+"     .XXXX.     "
+"     .XXXX.     "
+"     .XXXX.     "
+"     .XXXX.     "
+"   ...XXXX...   "
+"   .XXXXXXXX.   "
+"    .XXXXXX.    "
+"     .XXXX.     "
+"      .XX.      "
+"       ..       "
+"                "
+"...          ..."
+".X............X."
+".XXXXXXXXXXXXXX."
+"................"
+[end]
+
+[_point]
+Type=0x66
+SubType=0x02
+DAYXPM="16 16 3 1"
+" 	c None"
+".	c #000000"
+"X	c #0000FF"
+"     ......     "
+"     .XXXX.     "
+"     .XXXX.     "
+"     .XXXX.     "
+"     .XXXX.     "
+"   ...XXXX...   "
+"   .XXXXXXXX.   "
+"    .XXXXXX.    "
+"     .XXXX.     "
+"      .XX.      "
+"       ..       "
+"                "
+"...          ..."
+".X............X."
+".XXXXXXXXXXXXXX."
+"................"
+[end]

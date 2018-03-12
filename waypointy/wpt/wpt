@@ -1,0 +1,15 @@
+#!/bin/bash
+#    gpsbabel [options] -i INTYPE -f INFILE -o OUTTYPE -F OUTFILE
+
+GDZIE=/home/geokrety/tools/waypointy/wpt/
+
+wget --output-document=$GDZIE/gca.gpx http://geocaching.com.au/caches/gca.gpx
+
+cat $GDZIE/gca.gpx | sed -e 's/1522.070/22.070150/g' > $GDZIE/gca2.gpx
+gpsbabel -i GPX -f $GDZIE/gca2.gpx -o ozi -F $GDZIE/gca.wpt
+
+./wpt2sql.php
+
+rm $GDZIE/gca.wpt
+rm $GDZIE/gca.gpx
+rm $GDZIE/gca2.gpx

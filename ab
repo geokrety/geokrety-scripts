@@ -1,0 +1,3 @@
+echo ---------------------------------- >> ab-geokrety.txt
+date >> ab-geokrety.txt
+ab -c1 -n50 https://geokrety.org/index.php | tee -a ab-geokrety.txt

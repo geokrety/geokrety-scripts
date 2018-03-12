@@ -1,0 +1,6 @@
+#!/bin/bash
+wget http://geodashing.gpsgames.org/Games/dashpoints_csv.zip
+unzip dashpoints_csv.zip
+./gd2sql.php
+rm *.zip
+rm *.csv

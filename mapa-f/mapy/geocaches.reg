@@ -1,0 +1,9 @@
+REGEDIT4
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Garmin\MapSource\Families\geocaches]
+"ID"=hex:1c,9a
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Garmin\MapSource\Families\geocaches\1]
+"LOC"="C:\\myMaps\\imgs\\"
+"BMAP"="C:\\myMaps\\geocaches.img"
+"TDB"="C:\\myMaps\\geocaches.tdb"
