@@ -22,10 +22,10 @@ modifiedsince_1y=`date +"%Y%m%d%H%M%S" -d @$timestamp_1y`
 modifiedsince_all="20000510032102" # przypadkowa data z przeszłości :)
 
 pobierz_i_spakuj(){
-  #    wget "https://geokrety.org/export.php?modifiedsince=$1&kocham_kaczynskiego=$KOCHAM_KACZYNSKIEGO" -O "$GEOKRETY_WWW/rzeczy/xml/export-$2.xml"
+  wget "https://geokrety.org/export.php?modifiedsince=$1&kocham_kaczynskiego=$KOCHAM_KACZYNSKIEGO" -O "$GEOKRETY_WWW/rzeczy/xml/export-$2.xml"
   wget "https://geokrety.org/export2.php?modifiedsince=$1&kocham_kaczynskiego=$KOCHAM_KACZYNSKIEGO" -O "$GEOKRETY_WWW/rzeczy/xml/export2-$2.xml"
   wget "https://geokrety.org/export_oc.php?modifiedsince=$1&kocham_kaczynskiego=$KOCHAM_KACZYNSKIEGO" -O "$GEOKRETY_WWW/rzeczy/xml/export_oc-$2.xml"
-  #    bzip2 "/home/geokrety/public_html/rzeczy/xml/export-$2.xml"
+  bzip2 -f "$GEOKRETY_WWW/rzeczy/xml/export-$2.xml"
   bzip2 -f "$GEOKRETY_WWW/rzeczy/xml/export2-$2.xml"
   bzip2 -f "$GEOKRETY_WWW/rzeczy/xml/export_oc-$2.xml"
 }
