@@ -45,7 +45,7 @@ LOGFILE=/var/log/cron.log
 32 4 * * * root cd $HOME/statystyki/ && echo ./ostatnie_ruchy.php >> "$LOGFILE" && /usr/local/bin/php ./ostatnie_ruchy.php >> "$LOGFILE" 2>&1 && echo ./lost.php >> "$LOGFILE" && /usr/local/bin/php ./lost.php >> "$LOGFILE" 2>&1 && echo ./country_stat.ph >> "$LOGFILE" && /usr/local/bin/php ./country_stat.php >> "$LOGFILE" 2>&1 && echo ./hubs.php >> "$LOGFILE" && /usr/local/bin/php ./hubs.php >> "$LOGFILE" 2>&1
 
 #spam search
-3,23,43 * * * * root cd $HOME/spam/ && echo ./spam_search.php >> "$LOGFILE" && getspamlist.sh >> "$LOGFILE" && nice -n 10 /usr/local/bin/php ./spam_search.php >> "$LOGFILE" 2>&1
+3,23,43 * * * * root cd $HOME/spam/ && echo ./spam_search.php >> "$LOGFILE" && ./getspamlist.sh >> "$LOGFILE" && nice -n 10 /usr/local/bin/php ./spam_search.php >> "$LOGFILE" 2>&1
 
 # rajdy
 2 0 * * * root cd $HOME/rajdy/ && echo ./sprawdz-status.php >> "$LOGFILE" && /usr/local/bin/php ./sprawdz-status.php >> "$LOGFILE" 2>&1
