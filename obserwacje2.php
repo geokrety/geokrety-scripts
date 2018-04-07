@@ -139,7 +139,7 @@ if ($speedtest_obserwacje) {
 }
 
 
-// ------------------------------------------ my geokrets ------------------------------- //
+// ------------------------------------------ my GeoKrety ------------------------------- //
 
 
 $result = mysqli_query($link, "SELECT DISTINCT `gk-geokrety`.owner, `gk-users`.`lang` FROM `gk-geokrety`
@@ -159,7 +159,7 @@ while ($row = mysqli_fetch_row($result)) {
     $gk_lang[$userid] = sprintf("0:%s %s ", $lang, $config_jezyk_encoding[$lang]);
     ustaw_jezyk($config_jezyk_encoding[$lang]);
     $gk_lang[$userid] .= _('Language');
-    $dane_my[$userid] = recent_moves("WHERE gk.owner='$userid' AND ru.ruch_id >= $poczatkowe_ruch_id", 50, _("Recent moves of my geokrets"), '', false, true);
+    $dane_my[$userid] = recent_moves("WHERE gk.owner='$userid' AND ru.ruch_id >= $poczatkowe_ruch_id", 50, _("Recent moves of my GeoKrety"), '', false, true);
     if (preg_match("#".$regex."#i", $dane_my[$userid], $matches)) {
         $gk_lang[$userid] .= sprintf(" [%s] ", $matches[1]);
     }
@@ -179,7 +179,7 @@ if ($speedtest_obserwacje) {
 }
 
 
-// ------------------------------------------ observed geokrets ------------------------------- //
+// ------------------------------------------ observed GeoKrety ------------------------------- //
 
 
 $result = mysqli_query($link, "SELECT `gk-obserwable`.userid, `gk-users`.`lang`
@@ -210,7 +210,7 @@ while ($row = mysqli_fetch_row($result)) {
     $gk_lang[$userid] .= sprintf(", 1:%s %s ", $lang, $config_jezyk_encoding[$lang]);
     ustaw_jezyk($config_jezyk_encoding[$lang]);
     $gk_lang[$userid] .= _('Language');
-    $dane_obs[$userid] = recent_moves("", 50, _("Watched geokrets"), $zapytanie, false, true);
+    $dane_obs[$userid] = recent_moves("", 50, _("Watched GeoKrety"), $zapytanie, false, true);
     if (preg_match("#".$regex."#i", $dane_obs[$userid], $matches)) {
         $gk_lang[$userid] .= sprintf(" [%s] ", $matches[1]);
     }

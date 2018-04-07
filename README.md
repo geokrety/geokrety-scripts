@@ -22,7 +22,7 @@ mapa-f				- garmin cache map compilation
 mapa_statyczna_logow
 mapy_statyczne
 obserwacje
-obserwacje2.php			- tracked geokrets and mails
+obserwacje2.php			- tracked GeoKrety and mails
 optymalizuj.php
 pear-mail
 pop

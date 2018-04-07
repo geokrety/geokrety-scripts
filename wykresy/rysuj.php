@@ -73,7 +73,7 @@ $graph->SetBox(true, 'black', 1);
 $graph->xgrid->Show();
 
 $graph->xaxis->SetTitle("days", 'middle');
-$graph->yaxis->SetTitle("geokrets", 'middle');
+$graph->yaxis->SetTitle("GeoKrety", 'middle');
 $graph->title->Set("geokrety.org $data_human");
 
 // Create the linear plot
@@ -97,9 +97,9 @@ $lineplot3->SetWeight(3);
 $graph->AddY(0, $lineplot3);
 
 
-$lineplot->SetLegend("geokrets total");
-$lineplot2 ->SetLegend("geokrets in caches");
-$lineplot3 ->SetLegend("% of geokrets in caches");
+$lineplot->SetLegend("GeoKrety total");
+$lineplot2 ->SetLegend("GeoKrety in caches");
+$lineplot3 ->SetLegend("% of GeoKrety in caches");
 
 $graph->legend->Pos(0.15, 0.15, "left", "top");
 

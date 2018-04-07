@@ -21,7 +21,7 @@ ORDER BY ile_kretow DESC";
 
 $result = mysqli_query($link, $sql);
 
-$TRESC = "<table><tr><th>country</th><th>geokrets</th></tr>";
+$TRESC = "<table><tr><th>country</th><th>GeoKrety</th></tr>";
 $TRESC_GOOGLE = '';
 
 while ($row = mysqli_fetch_row($result)) {
