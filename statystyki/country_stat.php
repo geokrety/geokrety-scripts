@@ -33,7 +33,7 @@ while ($row = mysqli_fetch_row($result)) {
         $linka = "http://en.wikipedia.org/wiki/." . $country;
     }
     $TRESC .= '<tr><td><a href="' . $linka . '"><img src="'.CONFIG_CDN_COUNTRY_FLAGS.'/'.$country.'.png" alt="'.$country.'" title="'.$country.'" width="16" height="11" border="0" /></a> ' . $country .'
-<a href="/szukaj.php?country=' . $country . '">search</a></td>
+<a href="/szukaj.php?country=' . $country . '">show</a></td>
 <td>'.$kretow.'</td>
 </tr>' . "\n";
 
