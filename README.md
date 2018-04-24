@@ -35,6 +35,10 @@ static_xml.sh
 statystyki
 szukaj_close.sh
 waypointy			- waypoints fetching - IMPORTANT
-wykresy				- plots
+wykresy			- plots
 wysylanie_maili
 ```
+
+# Waypointy
+
+cf. [waypointy/oc/README.md](waypointy/oc/README.md)
