@@ -1,4 +1,4 @@
-FROM geokrety:1.1.0
+FROM geokrety:prod
 
 MAINTAINER Mathieu Alorent <contact@geokretymap.org>
 
