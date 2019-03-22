@@ -83,7 +83,7 @@ foreach ($BAZY_OC as $key => $baza) {
     if (isset ($GLOBALS['argv'][1]) && $GLOBALS['argv'][1] == 'full') {
         $modifiedsince = "20030101000000";
     }
-    $modifiedsince = "20160801000000";
+    // $modifiedsince = "20160801000000";
 
     echo $baza['prefix'] . "\n\n";
     if ($baza['prefix'] != 'OZ') {
