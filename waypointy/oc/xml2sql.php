@@ -2,8 +2,6 @@
 <?php
 //śćńółźć
 
-
-
 $BAZY_OC['de']['prefix'] = 'OC';
 $BAZY_OC['de']['url'] = "https://www.opencaching.de/xml/ocxml11.php?cache=1&session=0&charset=utf-8&cdata=1&xmldecl=1&ocxmltag=1&doctype=0&zip=0&modifiedsince=";
 $BAZY_OC['de']['szukaj'] = 'https://www.opencaching.de/searchplugin.php?userinput=';
@@ -42,7 +40,7 @@ $BAZY_OC['nl']['szukaj'] = 'http://www.opencaching.nl/searchplugin.php?userinput
 
 
 /*
-// tylko odkomentowa� //
+// tylko odkomentować //
 $BAZY_OC['cz']['prefix'] = 'OZ';
 $BAZY_OC['cz']['url'] = "/home/geokrety/public_html/tools/oc-cz.xml";
 $BAZY_OC['cz']['szukaj'] = 'http://www.opencaching.cz/searchplugin.php?userinput=';
@@ -53,11 +51,25 @@ include_once("../../konfig-tools.php");
 include_once("$geokrety_www/templates/konfig.php");
 require_once "$geokrety_www/__sentry.php";
 
+$importErrorsFile = "import-errors.txt";
+
+// format : Y-m-d H:i:s;prefix;key;nbImported;nbInsertOrUpdate;nbError
+$importHistoricFile = "data-xml.txt";
+
+
+// clean previous run errors
+file_put_contents($importErrorsFile, "");
+
 $link = DBPConnect();
-$zbior_baz = '';
+$totalUpdated = 0;
+$totalErrors = 0;
 
 foreach ($BAZY_OC as $key => $baza) {
-    $zbior_baz.=" $key";
+  try {
+    $nbImported = 0;
+    $nbInsertOrUpdate = 0;
+    $nbError = 0;
+
 
     $sql = "SELECT `timestamp` FROM `gk-waypointy` WHERE `waypoint` LIKE '" . $baza['prefix'] . "%' ORDER BY `timestamp` DESC LIMIT 1";
     $result = mysqli_query($link, $sql) or die("error 1: $id $sql");
@@ -71,49 +83,84 @@ foreach ($BAZY_OC as $key => $baza) {
     if (isset ($GLOBALS['argv'][1]) && $GLOBALS['argv'][1] == 'full') {
         $modifiedsince = "20030101000000";
     }
-    //$modifiedsince = "20160801000000";
+    $modifiedsince = "20160801000000";
 
     echo $baza['prefix'] . "\n\n";
     if ($baza['prefix'] != 'OZ') {
         $xml_raw = @file_get_contents($baza['url']. $modifiedsince);
-        if ($xml_raw === FALSE) {
-            continue;
-        }
     } else {
         $xml_raw = file_get_contents($baza['url']);
     }
 
+    if ($xml_raw === FALSE) {
+        echo " X nothing for prefix:". $baza['prefix'] ." key:". $key . " url:". $baza['url'] . "\n";
+        continue;
+    }
+
     //if(!empty($bazy['encoding'])) $xml_raw = iconv($bazy['encoding'], "UTF-8", $xml_raw);
     $xml = simplexml_load_string($xml_raw);
+    $nbImported = count($xml->cache);
 
     //print_r($xml); die();
 
+    echo " * processing ". $baza['prefix'] ." ($key)\n";
+    echo " *      count:". $nbImported . "\n";
+    echo " *        url:". $baza['url']  . "\n";
     if ($xml->cache) foreach ($xml->cache as $cache) {
-        $id = (real) $cache->id['id'];
+        try {
+            $id = (real) $cache->id['id'];
 
-        $name = trim(mysqli_real_escape_string($link, strtr((string) $cache->name, array('"' => ''))));
-        $owner = mysqli_real_escape_string($link, (string) $cache->userid);
-        $waypoint = (string) $cache->waypoints['oc'];
-        $lon = (string) $cache->longitude;
-        $lat = (string) $cache->latitude;
-        $typ = (string) $cache->type;
-        $kraj = (string) $cache->country;
-        $status = (int) $cache->status['id'];
+            $name = trim(mysqli_real_escape_string($link, strtr((string) $cache->name, array('"' => ''))));
+            $owner = mysqli_real_escape_string($link, (string) $cache->userid);
+            $waypoint = mysqli_real_escape_string($link, (string) $cache->waypoints['oc']);
+            $lon = mysqli_real_escape_string($link, (string) $cache->longitude);
+            $lat = mysqli_real_escape_string($link, (string) $cache->latitude);
+            $typ = mysqli_real_escape_string($link, (string) $cache->type);
+            $kraj = mysqli_real_escape_string($link, (string) $cache->country);
+            $status = (int) $cache->status['id'];
 
-        $linka = $baza['szukaj'] . $waypoint;
+            $linka = $baza['szukaj'] . $waypoint;
+            $linka = mysqli_real_escape_string($link, $linka);
 
-        $sql = "INSERT INTO `gk-waypointy` ( `waypoint`, `lat` , `lon` , `name` , `owner`,  `typ`, `kraj` , `link`, `status`)
-VALUES ('$waypoint',  '$lat', '$lon', '$name', '$owner', '$typ', '$kraj', '$linka', '$status')
-ON DUPLICATE KEY UPDATE `waypoint`='$waypoint', `lat`='$lat', `lon`='$lon', `name`='$name', `owner`='$owner', `typ`='$typ', `kraj`='$kraj', `link`='$linka', `status`='$status'";
+            $sql = "INSERT INTO `gk-waypointy` ( `waypoint`, `lat` , `lon` , `name` , `owner`,  `typ`, `kraj` , `link`, `status`)
+    VALUES ('$waypoint',  '$lat', '$lon', '$name', '$owner', '$typ', '$kraj', '$linka', '$status')
+    ON DUPLICATE KEY UPDATE `waypoint`='$waypoint', `lat`='$lat', `lon`='$lon', `name`='$name', `owner`='$owner', `typ`='$typ', `kraj`='$kraj', `link`='$linka', `status`='$status'";
 
-        //echo $sql; die();
-        $result = mysqli_query($link, $sql) or die("error 1: $id $sql");
+            $result = mysqli_query($link, $sql);
+            if ($result === false) { // ooooPs we got an import error !
+              throw new Exception("error sql : id:$id - query:$sql - mysqli_error:". mysqli_error($link));
+            }
 
-        echo "$name $owner $waypoint $lon $lat $typ $kraj\n";
-    }
-}
 
-file_put_contents("data-xml.txt", $zbior_baz . ";" . date("Y-m-d H:i:s"));
+            $nbInsertOrUpdate++;
+            $totalUpdated++;
+            if ($nbInsertOrUpdate % 500 == 0) {
+              echo " o $nbInsertOrUpdate\n";
+            }
+            // MUCH VERBOSE
+            // echo " o $name $owner $waypoint $lon $lat $typ $kraj\n";
+        } catch (Exception $e) {
+            echo " x error for $waypoint (cf. $importErrorsFile)\n";
+            // echo " x error for $name $owner $waypoint $lon $lat $typ $kraj (cf. $importErrorsFile)\n";
+            // echo "   message: ". $e->getMessage() ."\n";
+            // to avoid invalid characters in the script output, we put the error details into a file
+            // \- docker notice : "New state of 'nil' is invalid" is due to invalid character sent on stdout// cf https://github.com/docker/toolbox/issues/695
+            $nbError++;
+            $totalErrors++;
+            $errorToAppend = date("Y-m-d H:i:s") ." - error for $name $owner $waypoint $lon $lat $typ $kraj \n". $e->getMessage(). "\n\n";
+            file_put_contents($importErrorsFile, $errorToAppend, FILE_APPEND);
+        }
+    } // end foreach ($xml->cache as $cache)
+  } catch (Exception $e) {
+    echo " x error while handling $key \n";
+    echo "   message: ". $e->getMessage() ."\n";
+  }
+  $historicEntry = date("Y-m-d H:i:s") . ";". $baza['prefix'] . ";$key;$nbImported;$nbInsertOrUpdate;$nbError\n";
+  file_put_contents($importHistoricFile, $historicEntry, FILE_APPEND);
+  echo " * $key DONE - imported:$nbImported - updated:$nbInsertOrUpdate - error:$nbError\n";
+} // end foreach ($BAZY_OC as $key => $baza)
+
+echo " * DONE total update:$totalUpdated - errors:$totalErrors";
 
 mysqli_close($link);
 ?>
