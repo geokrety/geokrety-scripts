@@ -3,3 +3,7 @@
 $geokrety_www = "/opt/geokrety/";
 
 $kocham_kaczynskiego = "xxx";
+
+//~ geonames
+$geonamesEndpoint='http://api.geonames.org';
+$geonamesUsername='geokrety';

@@ -4,51 +4,42 @@
 include_once("../konfig-tools.php");
 include_once("$geokrety_www/templates/konfig.php");
 require_once "$geokrety_www/__sentry.php";
-
-$link = DBPConnect();
-
-
-/* ----------------------------------------------- kraj ------------------------------------------------------- */
-
 include("$geokrety_www/get_country_from_coords.php");
 
+// --- kraj - country - get ruchy without country but with coordinates
 
+$link = GKDB::getLink();
+$nbUpdated=0;
+// ruchy.logtype   	0=drop, 1=grab, 2=comment, 3=met, 4=arch, 5=dip
 
-//ok:
-//$result = mysqli_query("SELECT ruch_id, lat, lon FROM `gk-ruchy` WHERE `logtype`!='2' AND `logtype`!='1' AND (`lat`!='0' AND `lon`!='0') AND (`country` IS NULL or `country`='' or `country`='?' or `country`='{')");
+// get ruchy that are not comment or grab and without country but with lat/lon
+$selectRuchyWithoutCountry = <<<EOSQL
+SELECT ruch_id, lat, lon FROM `gk-ruchy`
+WHERE `logtype`!='2' AND `logtype`!='1'
+  AND (`lat`!='0' AND `lon`!='0')
+  AND (`country` IS NULL or `country`='' or `country`='xyz' or `country`='err')
+EOSQL;
 
-// uzupełnianie starych zrobić od 650400
-$result = mysqli_query($link, "SELECT ruch_id, lat, lon FROM `gk-ruchy` WHERE `logtype`!='2' AND `logtype`!='1' AND (`lat`!='0' AND `lon`!='0') AND (`country` IS NULL or `country`='' or `country`='xyz' or `country`='err') AND `ruch_id`>730000");
-//$result = mysqli_query($link, "SELECT ruch_id, lat, lon FROM `gk-ruchy` WHERE `logtype`!='2' AND `logtype`!='1' AND (`lat`!='0' AND `lon`!='0') AND (`country` IS NULL or `country`='' or `country`='XYZ' or `country`='{') AND `ruch_id`>632000");
+$startRuchyId = 730000;
+if (isset($startRuchyId)) {
+  $selectRuchyWithoutCountry .= " AND `ruch_id`>$startRuchyId";
+}
+
+$result = mysqli_query($link, $selectRuchyWithoutCountry);
+if ($result === FALSE) {
+  echo 'invalid query:'.mysqli_error($link).'\n';
+  die;
+}
 
 while ($row = mysqli_fetch_array($result)) {
     list($ruch_id, $lat, $lon) = $row;
-
-
     $country='';
-
     echo "$ruch_id, $lat, $lon::  ";
 
-    //file_put_contents("/home/geokrety/geonamess.info", "$ruch_id, $lat, $lon::");
-
+    // get from geo.kumy.org
     $country=get_country_from_coords($lat, $lon);
-    //print_r($country);
+
     echo "[ $country] ";
-
-    //file_put_contents("/home/geokrety/geonamess.info", "local search: $country ;;");
-
-
-    /*
-    if($country == '' OR $country=='xyz' or $country==NULL or $country=='?'){
-    $handle = fopen("http://ws.geonames.org/countryCode?lat=$lat&lng=$lon&radius=30", "rb");
-     $country = strtolower(trim(fread($handle, 3)));
-     echo "geonames...";
-     if(($country == '<!d') OR ($country == '')) { $country = 'xyz'; echo "bach!\n";}
-     //file_put_contents("/home/geokrety/geonamess.info", "geonames: $country ;;");
-     fclose($handle);
-      sleep(1);
-      }
-    */
 
     echo " google...";
     if ($country == '' or $country=='xyz' or $country==null or $country=='?') {
@@ -79,11 +70,11 @@ while ($row = mysqli_fetch_array($result)) {
 
     echo "$country\n";
 
+    $nbUpdated++;
     $sql = "UPDATE `gk-ruchy` SET  `country`='$country' WHERE `ruch_id` = '$ruch_id' LIMIT 1";
     $result2 = mysqli_query($link, $sql);
 }
-
-
 mysqli_close($link);
 
+echo "nbUpdated: $nbUpdated\n";
 ?>

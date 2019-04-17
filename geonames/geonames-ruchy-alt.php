@@ -5,18 +5,16 @@ include_once("../konfig-tools.php");
 include_once("$geokrety_www/templates/konfig.php");
 require_once "$geokrety_www/__sentry.php";
 
-$link = DBPConnect();
+$link = GKDB::getLink();
 
+// -- WYSOKO�� - altitude
 
+$link = GKDB::getLink();
 
-// ---------------- WYSOKO��  ------------------------ //
-
-// ok:
+// get ruchy trip step without good altitude
 $result = mysqli_query($link, "SELECT ruch_id, lat, lon FROM `gk-ruchy` WHERE `logtype`!='2' AND `logtype`!='1' AND (alt<'-2000')");
-
 // sprawdzenie powt�rne
 //$result = mysqli_query($link, "SELECT ruch_id, lat, lon FROM `gk-ruchy` WHERE `logtype`!='2' AND `logtype`!='1' AND (alt='-2000')");
-
 
 while ($row = mysqli_fetch_array($result)) {
     list($ruch_id, $lat, $lon) = $row;
