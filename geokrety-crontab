@@ -1,7 +1,7 @@
-MAIL=geokrety@kumy.net
+MAIL=contact@geokrety.org
 SHELL=/bin/bash
 HOME=/opt/geokrety
-LOGFILE=/var/log/cron.log
+LOGFILE=/proc/1/fd/1
 
 # m h  dom mon dow command
 * * * * * root date >> "$LOGFILE"

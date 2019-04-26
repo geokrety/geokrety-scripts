@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-echo "generuje secret id dla userów\n\n";
+echo "Generate missing secret id for users\n\n";
 
 
 function generateRandomString($length = 10)
