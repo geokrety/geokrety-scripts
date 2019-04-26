@@ -19,8 +19,9 @@ RUN apt-get update \
 # Install scripts and cron
 COPY . /opt/geokrety/
 
-# Instsall cron job
+# Install cron job
 RUN mv /opt/geokrety/geokrety-crontab /etc/cron.d/geokrety-cron \
-  && chmod 0644 /etc/cron.d/geokrety-cron
+  && chmod 0644 /etc/cron.d/geokrety-cron \
+  && chmod 755 /opt/geokrety/init.sh
 
-CMD ["cron", "-f"]
+CMD ["/opt/geokrety/init.sh"]

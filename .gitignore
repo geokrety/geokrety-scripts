@@ -3,8 +3,8 @@
 .project
 .svn
 .swp
-konfig-tools.php
-konfig-tools.sh
+konfig-tools.local.php
+konfig-tools.local.sh
 mapa-f/log.txt
 mapa-f/mapy/log.txt
 mapa-f/out/geocaches.exe.md5

@@ -1,3 +1,6 @@
 GEOKRETY_WWW=/var/www/html/
 
+# export bypass
 KOCHAM_KACZYNSKIEGO=xxxxx
+
+GOOGLE_MAP_KEY=xxx
