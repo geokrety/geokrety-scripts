@@ -16,7 +16,7 @@ for adres in "${adresy[@]}"
 do
 
 	echo "Pobieram: $adres"
-	wget "$adres" -O - | grep -f spam.grep -v >> spamlist.txt
+	curl -L -s -S "$adres" | grep -f spam.grep -v >> spamlist.txt
 
 done
 
