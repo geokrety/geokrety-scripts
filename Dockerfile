@@ -1,4 +1,5 @@
-FROM geokrety/website-legacy:prod
+ARG IMAGE=geokrety/website-legacy:prod
+FROM ${IMAGE}
 
 MAINTAINER GeoKrety Team <contact@geokrety.org>
 
