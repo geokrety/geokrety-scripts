@@ -24,7 +24,4 @@ mysqli_free_result($result);
 
 // ----------------------------- OUT ------------------------------//
 
-
-echo "\n\n" . strlen($OUTPUT) . "\n\n";
-
 file_put_contents("./lastlogs.txt", $OUTPUT);
