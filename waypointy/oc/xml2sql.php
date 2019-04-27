@@ -105,7 +105,7 @@ foreach ($BAZY_OC as $key => $baza) {
 
     echo " * processing ". $baza['prefix'] ." ($key)\n";
     echo " *      count:". $nbImported . "\n";
-    echo " *        url:". $baza['url']  . "\n";
+    echo " *        url:". $baza['url'] . $modifiedsince . "\n";
     if ($xml->cache) foreach ($xml->cache as $cache) {
         try {
             $id = (real) $cache->id['id'];
