@@ -104,7 +104,7 @@ $regex = "<h2>([^<]+)<\/h2>"; //lang debug
 // -------------------------------------- get some useful variables ------------------------------- //
 
 
-$poczatkowe_ruch_id = mysqli_query($link, "select ruch_id from `gk-ruchy` where `data_dodania` >= '$BEFORE' order by ruch_id asc limit 1")->fetch_object()->ruch_id;;
+$poczatkowe_ruch_id = mysqli_query($link, "select IFNULL((select ruch_id  from `gk-ruchy` where `data_dodania` >= '$BEFORE' order by ruch_id asc limit 1), (select MAX(ruch_id) from `gk-ruchy`)) as ruch_id")->fetch_object()->ruch_id;
 
 
 // -------------------------------------- news ------------------------------- //
