@@ -60,3 +60,6 @@ LOGFILE=/proc/1/fd/1
 */30 0-5 * * * root cd $HOME/mapa_statyczna_logow/ && echo ./ostatnie_logi.sh >> "$LOGFILE" && ./ostatnie_logi.sh >> "$LOGFILE" 2>&1
 
 30 11 5 * * root cd $HOME/statystyki/ && echo aktywni_userzy.php >> "$LOGFILE" && nice -n 10 /usr/local/bin/php aktywni_userzy.php |tee out/aktywni_userzy.gnuplot && gnuplot aktywni_userzy.gnuplot >> "$LOGFILE" 2>&1
+
+#
+*/1 * * * * root cd $HOME/metrics/ && echo ./geokret-website-metrics.php >> "$LOGFILE" && /usr/local/bin/php ./geokret-website-metrics.php >> "$LOGFILE" 2>&1
