@@ -17,7 +17,7 @@ LOGFILE=/proc/1/fd/1
 ################ TODO API changed
 36 4    * * * root cd $HOME/waypointy/wpg/ && echo ./gpx2sql-wpg.php >> "$LOGFILE" && nice -n 13 /usr/local/bin/php ./gpx2sql-wpg.php >> "$LOGFILE" 2>&1
 47 5    * * 2 root cd $HOME/waypointy/gpsgames && echo ./wpt >> "$LOGFILE" && nice -n 10 ./wpt >> "$LOGFILE" 2>&1
-52 5    * * * root cd $HOME/waypointy/ru/ && echo ./gpx2sql.php >> "$LOGFILE" && nice -n 10 /usr/local/bin/php ./gpx2sql.php >> "$LOGFILE" 2>&1
+52 */2    * * * root cd $HOME/waypointy/ru/ && echo ./gpx2sql.php >> "$LOGFILE" && nice -n 10 /usr/local/bin/php ./gpx2sql.php >> "$LOGFILE" 2>&1
 ######44 6,15 * * * root cd $HOME/waypointy/oc.com/ && echo ./oc.com >> "$LOGFILE" && nice -n 13 /usr/local/bin/php ./oc.com >> "$LOGFILE" 2>&1
 ################ TODO API CHANGED
 
