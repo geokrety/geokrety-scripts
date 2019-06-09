@@ -1,6 +1,11 @@
 #!/usr/bin/env php
 <?php
-//śćńółźć
+
+/*
+*  This is a script to synchronize list of caches from geocaching.su (ex-USSR geocaching website) 
+*  with Geokrety waypoints database.
+*  Script is being run via cron every 2 hours on geokrey.org side.
+*/
 
 include_once("../../konfig-tools.php");
 include_once("$geokrety_www/templates/konfig.php");
@@ -12,8 +17,8 @@ $link = DBPConnect();
 //$BAZY[] = "http://wpg.alleycat.pl/allwps.php";
 //$BAZY[] = "gcsu.xml";
 
-$BAZY[] = 'http://www.geocaching.su/rss/geokrety/api.php?interval=25h&changed=1';
-//$BAZY[] = 'http://www.geocaching.su/rss/geokrety/api.php?interval=3000d&changed=1';
+$BAZY[] = 'https://geocaching.su/rss/geokrety/api.php?interval=3h&changed=1';
+//$BAZY[] = 'https://geocaching.su/rss/geokrety/api.php?interval=3000d&changed=1';
 
 foreach ($BAZY as $baza) {
     $xml_raw = mb_convert_encoding(strtr(file_get_contents($baza), array('&' => '+')), "UTF-8", "windows-1251");
@@ -40,7 +45,7 @@ foreach ($BAZY as $baza) {
         $owner = trim(mysqli_escape_string($link, strtr((string) $cache->autor, array('"' => ''))));
         $waypoint = (string) $cache->code;
 
-        $linka = 'http://www.geocaching.su/?pn=101&cid=' . substr($waypoint, 2, 10);
+        $linka = 'https://geocaching.su/?pn=101&cid=' . substr($waypoint, 2, 10);
 
         //echo "N $lat, E$lon, name: $name, WPT: $wpt L: $linka\n\n";
 
