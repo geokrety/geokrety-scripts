@@ -21,7 +21,7 @@ $BAZY[] = 'https://geocaching.su/rss/geokrety/api.php?interval=3h&changed=1';
 //$BAZY[] = 'https://geocaching.su/rss/geokrety/api.php?interval=3000d&changed=1';
 
 foreach ($BAZY as $baza) {
-    $xml_raw = mb_convert_encoding(strtr(file_get_contents($baza), array('&' => '+')), "UTF-8", "windows-1251");
+    $xml_raw = strtr(file_get_contents($baza), array('&' => '+'));
 
     $xml = simplexml_load_string($xml_raw, "SimpleXMLElement", LIBXML_NOENT | LIBXML_NOCDATA);
 
