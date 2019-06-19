@@ -18,7 +18,7 @@ $link = DBPConnect();
 //$BAZY[] = "gcsu.xml";
 
 $BAZY[] = 'https://geocaching.su/rss/geokrety/api.php?interval=3h&changed=1';
-//$BAZY[] = 'https://geocaching.su/rss/geokrety/api.php?interval=3000d&changed=1';
+//$BAZY[] = 'https://geocaching.su/rss/geokrety/api.php?interval=20y&changed=1';
 
 foreach ($BAZY as $baza) {
     $xml_raw = strtr(file_get_contents($baza), array('&' => '+'));
