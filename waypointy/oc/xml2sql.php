@@ -1,166 +1,345 @@
 #!/usr/bin/env php
 <?php
-//śćńółźć
-
-$BAZY_OC['de']['prefix'] = 'OC';
-$BAZY_OC['de']['url'] = "https://www.opencaching.de/xml/ocxml11.php?cache=1&session=0&charset=utf-8&cdata=1&xmldecl=1&ocxmltag=1&doctype=0&zip=0&modifiedsince=";
-$BAZY_OC['de']['szukaj'] = 'https://www.opencaching.de/searchplugin.php?userinput=';
-
-
-$BAZY_OC['pl']['prefix'] = 'OP';
-$BAZY_OC['pl']['url'] = "https://www.opencaching.pl/xml/ocxml11.php?cache=1&session=0&charset=utf-8&cdata=1&xmldecl=1&ocxmltag=1&doctype=0&zip=0&modifiedsince=";
-$BAZY_OC['pl']['szukaj'] = 'https://www.opencaching.pl/searchplugin.php?userinput=';
-
-$BAZY_OC['uk']['prefix'] = 'OK';
-$BAZY_OC['uk']['url'] = "https://www.opencache.uk/xml/ocxml11.php?cache=1&session=0&charset=utf-8&cdata=1&xmldecl=1&ocxmltag=1&doctype=0&zip=0&modifiedsince=";
-$BAZY_OC['uk']['szukaj'] = 'https://www.opencache.uk/searchplugin.php?userinput=';
-
-
-//$BAZY_OC['se']['prefix'] = 'OS';
-//$BAZY_OC['se']['url'] = "http://94.255.245.234/xml/ocxml11.php?cache=1&session=0&charset=utf-8&cdata=1&xmldecl=1&ocxmltag=1&doctype=0&zip=0&modifiedsince=";
-//$BAZY_OC['se']['szukaj'] = 'http://www.opencaching.se/searchplugin.php?userinput=';
-
-$BAZY_OC['us']['prefix'] = 'OU';
-$BAZY_OC['us']['url'] = "http://www.opencaching.us/xml/ocxml11.php?cache=1&session=0&charset=utf-8&cdata=1&xmldecl=1&ocxmltag=1&doctype=0&zip=0&modifiedsince=";
-$BAZY_OC['us']['szukaj'] = 'http://www.opencaching.us/searchplugin.php?userinput=';
-
-// $BAZY_OC['jp']['prefix'] = 'OJ';
-// $BAZY_OC['jp']['url'] = "http://www.opencaching.jp/xml/ocxml11.php?cache=1&session=0&charset=utf-8&cdata=1&xmldecl=1&ocxmltag=1&doctype=0&zip=0&modifiedsince=";
-// $BAZY_OC['jp']['szukaj'] = 'http://www.opencaching.jp/searchplugin.php?userinput=';
-
-
-// $BAZY_OC['no']['prefix'] = 'OS';
-// $BAZY_OC['no']['url'] = "http://www.opencaching.no/xml/ocxml11.php?cache=1&session=0&charset=utf-8&cdata=1&xmldecl=1&ocxmltag=1&doctype=0&zip=0&modifiedsince=";
-// $BAZY_OC['no']['szukaj'] = 'http://www.opencaching.no/searchplugin.php?userinput=';
-
-
-$BAZY_OC['nl']['prefix'] = 'OB';
-$BAZY_OC['nl']['url'] = "http://www.opencaching.nl/xml/ocxml11.php?cache=1&session=0&charset=utf-8&cdata=1&xmldecl=1&ocxmltag=1&doctype=0&zip=0&modifiedsince=";
-$BAZY_OC['nl']['szukaj'] = 'http://www.opencaching.nl/searchplugin.php?userinput=';
-
-
-/*
-// tylko odkomentować //
-$BAZY_OC['cz']['prefix'] = 'OZ';
-$BAZY_OC['cz']['url'] = "/home/geokrety/public_html/tools/oc-cz.xml";
-$BAZY_OC['cz']['szukaj'] = 'http://www.opencaching.cz/searchplugin.php?userinput=';
-*/
 
 
 include_once("../../konfig-tools.php");
 include_once("$geokrety_www/templates/konfig.php");
 require_once "$geokrety_www/__sentry.php";
 
-$importErrorsFile = "import-errors.txt";
+// For local tests
+//function DBPConnect()
+//{
+//    return mysqli_connect('localhost', 'root', '', 'geokrety-db');
+//}
 
-// format : Y-m-d H:i:s;prefix;key;nbImported;nbInsertOrUpdate;nbError
-$importHistoricFile = "data-xml.txt";
+/**
+ * Deletes whole folder tree including files inside
+ *
+ * @param $dir string path to delete
+ * @return void
+ */
+function deleteTree($dir)
+{
+    if (empty($dir) or !$dir) {
+        return;
+    }
+    $files = array_diff(scandir($dir), array('.', '..'));
+    foreach ($files as $file) {
+        (is_dir("$dir/$file")) ? deleteTree("$dir/$file") : unlink("$dir/$file");
+    }
+    rmdir($dir);
+}
+
+/**
+ *
+ * Copies the file from $url to $output, supports both file paths and urs
+ *
+ * @param $url string path to source file or URL
+ * @param $output string path to output file or stream
+ * @throws Exception if something goes wrong
+ */
+function downloadFile($url, $output)
+{
+    $readableStream = fopen($url, 'rb');
+    if ($readableStream === false) {
+        throw new Exception("Something went wrong while fetching " . $url);
+    }
+    $writableStream = fopen($output, 'wb');
+
+    stream_copy_to_stream($readableStream, $writableStream);
+
+    fclose($writableStream);
+}
+
+function performIncrementalUpdate($link, $changes)
+{
+    echo " *      total:" . sizeof($changes) . "\n";
+    $nUpdated = 0;
+    $nDeleted = 0;
+
+    foreach ($changes as $change) {
+
+        if ($change->object_type != 'geocache') {
+            continue;
+        }
+
+        $id = $change->object_key->code;
+
+        if ($change->change_type == 'delete') {
+            //delete from DB
+
+            $sql = 'DELETE FROM `gk-waypointy` WHERE waypoint="' . mysqli_real_escape_string($link, $id) . '"';
+
+            $result = mysqli_query($link, $sql);
+
+            if ($result === false) { // ooooPs we got an import error !
+                print("error sql : id:$id - query:$sql - mysqli_error:" . mysqli_error($link) . "\n");
+            }
+            $nDeleted++;
+            continue;
+        }
+
+        // Check for needed fields and make an update
+        $sqlInsert = array();
+        $sqlValues = array();
+        $sqlUpdate = array();
+
+        if (isset($change->data->names)) {
+            $name = mysqli_real_escape_string($link, implode(' | ', (array)$change->data->names));
+            $sqlInsert [] = 'name';
+            $sqlValues [] = "'$name'";
+            $sqlUpdate [] = "name='$name'";
+        }
+        if (isset($change->data->owner->username)) {
+            $owner = mysqli_real_escape_string($link, (string)$change->data->owner->username);
+            $sqlInsert [] = 'owner';
+            $sqlValues [] = "'$owner'";
+            $sqlUpdate [] = "owner='$owner'";
+        }
+        if (isset($change->data->location)) {
+            $location = explode('|', $change->data->location);
+            $lon = mysqli_real_escape_string($link, (string)$location[0]);
+            $lat = mysqli_real_escape_string($link, (string)$location[1]);
+
+            $sqlInsert [] = 'lon';
+            $sqlValues [] = "'$lon'";
+            $sqlUpdate [] = "lon='$lon'";
+
+            $sqlInsert [] = 'lat';
+            $sqlValues [] = "'$lat'";
+            $sqlUpdate [] = "lat='$lat'";
+        }
+        if (isset($change->data->type)) {
+            $type = mysqli_real_escape_string($link, (string)$change->data->type);
+            $sqlInsert [] = 'typ';
+            $sqlValues [] = "'$type'";
+            $sqlUpdate [] = "typ='$type'";
+        }
+        if (isset($change->data->country)) {
+            $country = mysqli_real_escape_string($link, (string)$change->data->country);
+            $sqlInsert [] = 'kraj';
+            $sqlValues [] = "'$country'";
+            $sqlUpdate [] = "kraj='$country'";
+        }
+        if (isset($change->data->url)) {
+            $url = mysqli_real_escape_string($link, (string)$change->data->url);
+            $sqlInsert [] = 'link';
+            $sqlValues [] = "'$url'";
+            $sqlUpdate [] = "link='$url'";
+        }
+
+        if (sizeof($sqlInsert) > 0) {
+            // It can happen that changelog contains useless fields like "founds" which we are not interested in.
+            // So we need to trigger actual update only if at least one of our fields was changes.
+
+            $sqlInsert [] = 'waypoint';
+            $sqlValues [] = "'$id'";
+            $sqlUpdate [] = "waypoint='$id'";
+
+            $insertPart = '(' . implode(',', $sqlInsert) . ')';
+            $valuesPart = '(' . implode(',', $sqlValues) . ')';
+            $onDupPart = implode(',', $sqlUpdate);
+            $sql = 'INSERT INTO `gk-waypointy` ' . $insertPart . ' VALUES ' . $valuesPart . ' ON DUPLICATE KEY UPDATE ' . $onDupPart;
+
+            $result = mysqli_query($link, $sql);
+
+            if ($result === false) { // ooooPs we got an import error !
+                print("error sql : id:$id - query:$sql - mysqli_error:" . mysqli_error($link) . "\n");
+            }
+            $nUpdated++;
+        }
+    }
+
+    echo " *    updated:" . $nUpdated . "\n";
+    echo " *    deleted:" . $nDeleted . "\n";
+}
 
 
-// clean previous run errors
-file_put_contents($importErrorsFile, "");
+function insertFromFullDump($link, $folder)
+{
+    $index = json_decode(file_get_contents($folder . '/index.json'));
+    $revision = $index->revision;
 
-$link = DBPConnect();
+    foreach ($index->data_files as $piece) {
+        $changes = json_decode(file_get_contents($folder . '/' . $piece));
+        performIncrementalUpdate($link, $changes);
+    }
+    return $revision;
+}
+
+function getLastUpdate($service)
+{
+    $link = DBPConnect();
+    $sql = "SELECT `last_update` FROM `gk-waypointy-sync` WHERE `service_id` LIKE '" . $service . "%'";
+    $result = mysqli_query($link, $sql);
+    $row = mysqli_fetch_assoc($result);
+    if ($row === null) {
+        // Seems like no such key is present. Let's add it
+        $sql = "INSERT INTO `gk-waypointy-sync` (service_id) VALUES ('" . $service . "')";
+        mysqli_query($link, $sql);
+        $row = ['last_update' => null];
+    }
+    mysqli_close($link);
+    return $row['last_update'];
+}
+
+function setLastUpdate($service, $lastUpdate)
+{
+    echo " *    new rev:" . $lastUpdate . "\n";
+    $link = DBPConnect();
+    $sql = "UPDATE `gk-waypointy-sync` SET `last_update`='" . mysqli_real_escape_string($link, $lastUpdate) . "' WHERE `service_id` LIKE '" . $service . "%'";
+    mysqli_query($link, $sql);
+}
+
+/**
+ * Downloads .tar.bz2 archive from $url and extracts it to $output
+ *
+ * @param $url string source URL
+ * @param $output string folder path where to extract
+ * @throws Exception if something goes wrong
+ */
+function saveAndExtractDumpFile($url, $output)
+{
+    $temp = "tempfile.tar.bz2";
+    downloadFile($url, $temp);
+    // full dump gives .tar.bz2 file...
+
+    // Save bz2 file
+    $bz = bzopen($temp, "r");
+    $res = fopen("tempfile.tar", "w");
+    $copied = stream_copy_to_stream($bz, $res);
+    fclose($res);
+    fclose($bz);
+
+    // Extract tar
+    //For at least .pl Phar complains that archive is corrupted :(
+    // Maybe use exec on lin?
+    //exec('mkdir TestBlable && tar -C TestBlable -xvf tempfile.tar');
+
+    $phar = new PharData('tempfile.tar');
+    $phar->extractTo($output); // extract all files
+
+    // Finally we got 2+ Gb of random json files. Let's parse
+}
+
+
+if (getenv("OC_PL_OKAPI_CONSUMER_KEY")) {
+    $BAZY_OC['OC_PL']['key'] = getenv("OC_PL_OKAPI_CONSUMER_KEY");
+    $BAZY_OC['OC_PL']['url'] = "https://opencaching.pl/okapi/services/replicate/changelog?consumer_key=" . $BAZY_OC['OC_PL']['key'] . "&since=";
+    $BAZY_OC['OC_PL']['full_url'] = "https://opencaching.pl/okapi/services/replicate/fulldump?pleeaase=true&consumer_key=" . $BAZY_OC['OC_PL']['key'];
+// Also can be local path
+#$BAZY_OC['OC_PL']['full_url'] = "C:\Users\Downloads\okapi-dump-r7198164.tar.bz2";
+}
+
+if (getenv("OC_DE_OKAPI_CONSUMER_KEY")) {
+    $BAZY_OC['OC_DE']['key'] = getenv("OC_DE_OKAPI_CONSUMER_KEY");
+    $BAZY_OC['OC_DE']['url'] = "https://www.opencaching.de/okapi/services/replicate/changelog?consumer_key=" . $BAZY_OC['OC_DE']['key'] . "&since=";
+    $BAZY_OC['OC_DE']['full_url'] = "https://www.opencaching.de/okapi/services/replicate/fulldump?pleeaase=true&consumer_key=" . $BAZY_OC['OC_DE']['key'];
+}
+
+if (getenv("OC_UK_OKAPI_CONSUMER_KEY")) {
+    $BAZY_OC['OC_UK']['key'] = getenv("OC_UK_OKAPI_CONSUMER_KEY");
+    $BAZY_OC['OC_UK']['url'] = "https://www.opencache.uk/okapi/services/replicate/changelog?consumer_key=" . $BAZY_OC['OC_UK']['key'] . "&since=";
+    $BAZY_OC['OC_UK']['full_url'] = "https://www.opencache.uk/okapi/services/replicate/fulldump?pleeaase=true&consumer_key=" . $BAZY_OC['OC_UK']['key'];
+}
+
+if (getenv("OC_US_OKAPI_CONSUMER_KEY")) {
+    $BAZY_OC['OC_US']['key'] = getenv("OC_US_OKAPI_CONSUMER_KEY");
+    $BAZY_OC['OC_US']['url'] = "http://www.opencaching.us/okapi/services/replicate/changelog?consumer_key=" . $BAZY_OC['OC_US']['key'] . "&since=";
+    $BAZY_OC['OC_US']['full_url'] = "http://www.opencaching.us/okapi/services/replicate/fulldump?pleeaase=true&consumer_key=" . $BAZY_OC['OC_US']['key'];
+}
+
+if (getenv("OC_NL_OKAPI_CONSUMER_KEY")) {
+    $BAZY_OC['OC_NL']['key'] = getenv("OC_NL_OKAPI_CONSUMER_KEY");
+    $BAZY_OC['OC_NL']['url'] = "https://www.opencaching.nl/okapi/services/replicate/changelog?consumer_key=" . $BAZY_OC['OC_NL']['key'] . "&since=";
+    $BAZY_OC['OC_NL']['full_url'] = "https://www.opencaching.nl/okapi/services/replicate/fulldump?pleeaase=true&consumer_key=" . $BAZY_OC['OC_NL']['key'];
+}
+
+if (getenv("OC_RO_OKAPI_CONSUMER_KEY")) {
+    $BAZY_OC['OC_RO']['key'] = getenv("OC_RO_OKAPI_CONSUMER_KEY");
+    $BAZY_OC['OC_RO']['url'] = "https://www.opencaching.ro/okapi/services/replicate/changelog?consumer_key=" . $BAZY_OC['OC_RO']['key'] . "&since=";
+    $BAZY_OC['OC_RO']['full_url'] = "https://www.opencaching.ro/okapi/services/replicate/fulldump?pleeaase=true&consumer_key=" . $BAZY_OC['OC_RO']['key'];
+}
+
+/*
+// Czech OC is super old :(
+$BAZY_OC['cz']['prefix'] = 'OZ';
+$BAZY_OC['cz']['url'] = "/home/geokrety/public_html/tools/oc-cz.xml";
+$BAZY_OC['cz']['szukaj'] = 'http://www.opencaching.cz/searchplugin.php?userinput=';
+*/
+
+
 $totalUpdated = 0;
 $totalErrors = 0;
 
 foreach ($BAZY_OC as $key => $baza) {
-  try {
     $nbImported = 0;
     $nbInsertOrUpdate = 0;
     $nbError = 0;
 
-
-    $sql = "SELECT `timestamp` FROM `gk-waypointy` WHERE `waypoint` LIKE '" . $baza['prefix'] . "%' ORDER BY `timestamp` DESC LIMIT 1";
-    $result = mysqli_query($link, $sql) or die("error 1: $id $sql");
-    $row = mysqli_fetch_array($result);
-    if (!empty($row)) {
-        $modifiedsince = date("YmdHis", strtotime($row[0]));
-    } else {
-        $modifiedsince = "20030101000000";
-    }
-
+    $downloadUrl = $baza['full_url'];
     if (isset ($GLOBALS['argv'][1]) && $GLOBALS['argv'][1] == 'full') {
-        $modifiedsince = "20030101000000";
-    }
-    // $modifiedsince = "20160801000000";
-
-    echo $baza['prefix'] . "\n\n";
-    if ($baza['prefix'] != 'OZ') {
-        $xml_raw = @file_get_contents($baza['url']. $modifiedsince);
+        $fullResync = true;
     } else {
-        $xml_raw = file_get_contents($baza['url']);
-    }
-
-    if ($xml_raw === FALSE) {
-        echo " X nothing for prefix:". $baza['prefix'] ." key:". $key . " url:". $baza['url'] . "\n";
-        continue;
-    }
-
-    //if(!empty($bazy['encoding'])) $xml_raw = iconv($bazy['encoding'], "UTF-8", $xml_raw);
-    $xml = simplexml_load_string($xml_raw);
-    $nbImported = count($xml->cache);
-
-    //print_r($xml); die();
-
-    echo " * processing ". $baza['prefix'] ." ($key)\n";
-    echo " *      count:". $nbImported . "\n";
-    echo " *        url:". $baza['url'] . $modifiedsince . "\n";
-    if ($xml->cache) foreach ($xml->cache as $cache) {
-        try {
-            $id = (real) $cache->id['id'];
-
-            $name = trim(mysqli_real_escape_string($link, strtr((string) $cache->name, array('"' => ''))));
-            $owner = mysqli_real_escape_string($link, (string) $cache->userid);
-            $waypoint = mysqli_real_escape_string($link, (string) $cache->waypoints['oc']);
-            $lon = mysqli_real_escape_string($link, (string) $cache->longitude);
-            $lat = mysqli_real_escape_string($link, (string) $cache->latitude);
-            $typ = mysqli_real_escape_string($link, (string) $cache->type);
-            $kraj = mysqli_real_escape_string($link, (string) $cache->country);
-            $status = (int) $cache->status['id'];
-
-            $linka = $baza['szukaj'] . $waypoint;
-            $linka = mysqli_real_escape_string($link, $linka);
-
-            $sql = "INSERT INTO `gk-waypointy` ( `waypoint`, `lat` , `lon` , `name` , `owner`,  `typ`, `kraj` , `link`, `status`)
-    VALUES ('$waypoint',  '$lat', '$lon', '$name', '$owner', '$typ', '$kraj', '$linka', '$status')
-    ON DUPLICATE KEY UPDATE `waypoint`='$waypoint', `lat`='$lat', `lon`='$lon', `name`='$name', `owner`='$owner', `typ`='$typ', `kraj`='$kraj', `link`='$linka', `status`='$status'";
-
-            $result = mysqli_query($link, $sql);
-            if ($result === false) { // ooooPs we got an import error !
-              throw new Exception("error sql : id:$id - query:$sql - mysqli_error:". mysqli_error($link));
-            }
-
-
-            $nbInsertOrUpdate++;
-            $totalUpdated++;
-            if ($nbInsertOrUpdate % 500 == 0) {
-              echo " o $nbInsertOrUpdate\n";
-            }
-            // MUCH VERBOSE
-            // echo " o $name $owner $waypoint $lon $lat $typ $kraj\n";
-        } catch (Exception $e) {
-            echo " x error for $waypoint (cf. $importErrorsFile)\n";
-            // echo " x error for $name $owner $waypoint $lon $lat $typ $kraj (cf. $importErrorsFile)\n";
-            // echo "   message: ". $e->getMessage() ."\n";
-            // to avoid invalid characters in the script output, we put the error details into a file
-            // \- docker notice : "New state of 'nil' is invalid" is due to invalid character sent on stdout// cf https://github.com/docker/toolbox/issues/695
-            $nbError++;
-            $totalErrors++;
-            $errorToAppend = date("Y-m-d H:i:s") ." - error for $name $owner $waypoint $lon $lat $typ $kraj \n". $e->getMessage(). "\n\n";
-            file_put_contents($importErrorsFile, $errorToAppend, FILE_APPEND);
+        $lastUpdate = getLastUpdate($key);
+        if (!empty($lastUpdate)) {
+            $downloadUrl = $baza['url'] . $lastUpdate;
+            $fullResync = false;
+        } else {
+            $fullResync = true;
         }
-    } // end foreach ($xml->cache as $cache)
-  } catch (Exception $e) {
-    echo " x error while handling $key \n";
-    echo "   message: ". $e->getMessage() ."\n";
-  }
-  $historicEntry = date("Y-m-d H:i:s") . ";". $baza['prefix'] . ";$key;$nbImported;$nbInsertOrUpdate;$nbError\n";
-  file_put_contents($importHistoricFile, $historicEntry, FILE_APPEND);
-  echo " * $key DONE - imported:$nbImported - updated:$nbInsertOrUpdate - error:$nbError\n";
-} // end foreach ($BAZY_OC as $key => $baza)
+    }
 
-echo " * DONE total update:$totalUpdated - errors:$totalErrors";
+    echo " * processing " . $key . "\n";
+    if ($fullResync) {
+        echo " *  FULL SYNC\n";
+        echo " *        url:" . $downloadUrl . "\n";
+    }
 
-mysqli_close($link);
+    $success = true;
+    if ($fullResync) {
+        $fullDumpPath = 'oc_dump_extracted';
+        try {
+            saveAndExtractDumpFile($downloadUrl, $fullDumpPath);
+        } catch (Exception $e) {
+            print("Cannot get full dump for " . $key . "\n");
+            print($e->getMessage());
+            continue;
+        }
+
+        // Connect to DB only when dump is ready, because downloading and extracting takes a lot of time
+        $link = DBPConnect();
+        $revision = insertFromFullDump($link, $fullDumpPath);
+        mysqli_close($link);
+        deleteTree($fullDumpPath);
+        setLastUpdate($key, $revision);
+    } else {
+        $more = true;
+        $revision = $lastUpdate;
+
+        // Since amount of results per revision is limited, need to iterate quite a lot of times for big OC websites.
+        while ($more) {
+            $downloadUrl = $baza['url'] . $revision;
+            echo " *        url:" . $downloadUrl . "\n";
+            $raw = file_get_contents($downloadUrl);
+            if ($raw === false) {
+                print("Cannot get incremental dump for " . $key . "\n");
+                print("Maybe `since` is too old, check full resync or try again\n");
+                break;
+            }
+            $json = json_decode($raw);
+            $changes = $json->changelog;
+
+            if (sizeof($changes) > 0) {
+                $link = DBPConnect();
+                performIncrementalUpdate($link, $changes);
+                mysqli_close($link);
+            }
+            $revision = $json->revision;
+            $more = $json->more;
+            setLastUpdate($key, $revision);
+        }
+    }
+}
+
 ?>
