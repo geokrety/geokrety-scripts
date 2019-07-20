@@ -84,14 +84,14 @@ function performIncrementalUpdate($link, $changes)
         if (isset($change->data->names)) {
             $name = mysqli_real_escape_string($link, implode(' | ', (array)$change->data->names));
             $sqlInsert [] = 'name';
-            $sqlValues [] = "'$name'";
-            $sqlUpdate [] = "name='$name'";
+            $sqlValues [] = $name;
+            $sqlUpdate [] = "name=?";
         }
         if (isset($change->data->owner->username)) {
             $owner = mysqli_real_escape_string($link, (string)$change->data->owner->username);
             $sqlInsert [] = 'owner';
-            $sqlValues [] = "'$owner'";
-            $sqlUpdate [] = "owner='$owner'";
+            $sqlValues [] = $owner;
+            $sqlUpdate [] = "owner=?";
         }
         if (isset($change->data->location)) {
             $location = explode('|', $change->data->location);
@@ -99,30 +99,30 @@ function performIncrementalUpdate($link, $changes)
             $lat = floatval($location[1]);
 
             $sqlInsert [] = 'lon';
-            $sqlValues [] = "$lon";
-            $sqlUpdate [] = "lon=$lon";
+            $sqlValues [] = $lon;
+            $sqlUpdate [] = "lon=?";
 
             $sqlInsert [] = 'lat';
-            $sqlValues [] = "$lat";
-            $sqlUpdate [] = "lat=$lat";
+            $sqlValues [] = $lat;
+            $sqlUpdate [] = "lat=?";
         }
         if (isset($change->data->type)) {
             $type = mysqli_real_escape_string($link, (string)$change->data->type);
             $sqlInsert [] = 'typ';
-            $sqlValues [] = "'$type'";
-            $sqlUpdate [] = "typ='$type'";
+            $sqlValues [] = $type;
+            $sqlUpdate [] = "typ=?";
         }
         if (isset($change->data->country)) {
             $country = mysqli_real_escape_string($link, (string)$change->data->country);
             $sqlInsert [] = 'kraj';
-            $sqlValues [] = "'$country'";
-            $sqlUpdate [] = "kraj='$country'";
+            $sqlValues [] = $country;
+            $sqlUpdate [] = "kraj=?";
         }
         if (isset($change->data->url)) {
             $url = mysqli_real_escape_string($link, (string)$change->data->url);
             $sqlInsert [] = 'link';
-            $sqlValues [] = "'$url'";
-            $sqlUpdate [] = "link='$url'";
+            $sqlValues [] = $url;
+            $sqlUpdate [] = "link=?";
         }
 
         if (sizeof($sqlInsert) > 0) {
@@ -130,17 +130,19 @@ function performIncrementalUpdate($link, $changes)
             // So we need to trigger actual update only if at least one of our fields was changes.
 
             $sqlInsert [] = 'waypoint';
-            $sqlValues [] = "'$id'";
-            $sqlUpdate [] = "waypoint='$id'";
+            $sqlValues [] = $id;
+            $sqlUpdate [] = "waypoint=?";
+
+            $questionMarks = array_fill(0, count($sqlValues), '?');
 
             $insertPart = '(' . implode(',', $sqlInsert) . ')';
-            $valuesPart = '(' . implode(',', $sqlValues) . ')';
+            $valuesPart = '(' . implode(',', $questionMarks) . ')';
             $onDupPart = implode(',', $sqlUpdate);
             $sql = 'INSERT INTO `gk-waypointy` ' . $insertPart . ' VALUES ' . $valuesPart . ' ON DUPLICATE KEY UPDATE ' . $onDupPart;
+            $stmt = mysqli_prepare($link, $sql);
+            mysqli_stmt_bind_param($stmt, str_repeat("s", count($sqlValues) * 2), ...$sqlValues, ...$sqlValues);
 
-            $result = mysqli_query($link, $sql);
-
-            if ($result === false) { // ooooPs we got an import error !
+            if ($stmt->execute() === false) { // ooooPs we got an import error !
                 print("error sql : id:$id - query:$sql - mysqli_error:" . mysqli_error($link) . "\n");
             }
             $nUpdated++;
