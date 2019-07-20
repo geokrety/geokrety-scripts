@@ -1,16 +1,13 @@
 #!/usr/bin/env php
 <?php
 
-
-include_once("../../konfig-tools.php");
-include_once("$geokrety_www/templates/konfig.php");
 require_once "$geokrety_www/__sentry.php";
 
-// For local tests
-//function DBPConnect()
-//{
-//    return mysqli_connect('localhost', 'root', '', 'geokrety-db');
-//}
+function DBPConnect()
+{
+    //return mysqli_connect('localhost', 'root', '', 'geokrety-db');
+    return GKDB::getLink();
+}
 
 /**
  * Deletes whole folder tree including files inside
@@ -32,7 +29,7 @@ function deleteTree($dir)
 
 /**
  *
- * Copies the file from $url to $output, supports both file paths and urs
+ * Copies the file from $url to $output, supports both file paths and urls
  *
  * @param $url string path to source file or URL
  * @param $output string path to output file or stream
@@ -68,11 +65,11 @@ function performIncrementalUpdate($link, $changes)
         if ($change->change_type == 'delete') {
             //delete from DB
 
-            $sql = 'DELETE FROM `gk-waypointy` WHERE waypoint="' . mysqli_real_escape_string($link, $id) . '"';
+            $sql = 'DELETE FROM `gk-waypointy` WHERE waypoint= ?';
+            $stmt = mysqli_prepare($link, $sql);
+            mysqli_stmt_bind_param($stmt, 's', $id);
 
-            $result = mysqli_query($link, $sql);
-
-            if ($result === false) { // ooooPs we got an import error !
+            if ($stmt->execute() === false) { // ooooPs we got an import error !
                 print("error sql : id:$id - query:$sql - mysqli_error:" . mysqli_error($link) . "\n");
             }
             $nDeleted++;
@@ -98,16 +95,16 @@ function performIncrementalUpdate($link, $changes)
         }
         if (isset($change->data->location)) {
             $location = explode('|', $change->data->location);
-            $lon = mysqli_real_escape_string($link, (string)$location[0]);
-            $lat = mysqli_real_escape_string($link, (string)$location[1]);
+            $lon = floatval($location[0]);
+            $lat = floatval($location[1]);
 
             $sqlInsert [] = 'lon';
-            $sqlValues [] = "'$lon'";
-            $sqlUpdate [] = "lon='$lon'";
+            $sqlValues [] = "$lon";
+            $sqlUpdate [] = "lon=$lon";
 
             $sqlInsert [] = 'lat';
-            $sqlValues [] = "'$lat'";
-            $sqlUpdate [] = "lat='$lat'";
+            $sqlValues [] = "$lat";
+            $sqlUpdate [] = "lat=$lat";
         }
         if (isset($change->data->type)) {
             $type = mysqli_real_escape_string($link, (string)$change->data->type);
@@ -170,25 +167,31 @@ function insertFromFullDump($link, $folder)
 function getLastUpdate($service)
 {
     $link = DBPConnect();
-    $sql = "SELECT `last_update` FROM `gk-waypointy-sync` WHERE `service_id` LIKE '" . $service . "%'";
-    $result = mysqli_query($link, $sql);
-    $row = mysqli_fetch_assoc($result);
+    $sql = "SELECT `last_update` FROM `gk-waypointy-sync` WHERE `service_id` = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, 's', $service);
+    $stmt->execute();
+    $stmt->bind_result($row);
+    $stmt->fetch();
+
     if ($row === null) {
         // Seems like no such key is present. Let's add it
-        $sql = "INSERT INTO `gk-waypointy-sync` (service_id) VALUES ('" . $service . "')";
-        mysqli_query($link, $sql);
-        $row = ['last_update' => null];
+        $sql = "INSERT INTO `gk-waypointy-sync` (service_id) VALUES (?)";
+        $stmt = mysqli_prepare($link, $sql);
+        mysqli_stmt_bind_param($stmt, 's', $service);
+        mysqli_stmt_execute($stmt);
     }
-    mysqli_close($link);
-    return $row['last_update'];
+    return $row;
 }
 
 function setLastUpdate($service, $lastUpdate)
 {
     echo " *    new rev:" . $lastUpdate . "\n";
     $link = DBPConnect();
-    $sql = "UPDATE `gk-waypointy-sync` SET `last_update`='" . mysqli_real_escape_string($link, $lastUpdate) . "' WHERE `service_id` LIKE '" . $service . "%'";
-    mysqli_query($link, $sql);
+    $sql = "UPDATE `gk-waypointy-sync` SET `last_update`=? WHERE `service_id` = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, 'ss', $lastUpdate, $service);
+    $stmt->execute();
 }
 
 /**
