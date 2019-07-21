@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
 
+include_once("../../konfig-tools.php");
 require_once "$geokrety_www/__sentry.php";
 
 function DBPConnect()
