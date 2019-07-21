@@ -1,13 +1,27 @@
 #!/usr/bin/env php
 <?php
 
-include_once("../../konfig-tools.php");
+include_once('../../konfig-tools.php');
 require_once "$geokrety_www/__sentry.php";
 
 function DBPConnect()
 {
     //return mysqli_connect('localhost', 'root', '', 'geokrety-db');
     return GKDB::getLink();
+}
+
+function prepareBindExecute(string $action, string $sql, string $bindParams = null, array $bindValues = null) {
+    $link = DBPConnect();
+    if (!($stmt = $link->prepare($sql))) {
+        throw new \Exception($action.' prepare failed: ('.$link->errno.') '.$link->error);
+    }
+    if (!is_null($bindValues) && !$stmt->bind_param($bindParams, ...$bindValues)) {
+        throw new \Exception($action.' binding parameters failed: ('.$stmt->errno.') '.$stmt->error);
+    }
+    if (!$stmt->execute()) {
+        throw new \Exception($action.' execute failed: ('.$stmt->errno.') '.$stmt->error);
+    }
+    return $stmt;
 }
 
 /**
@@ -49,7 +63,7 @@ function downloadFile($url, $output)
     fclose($writableStream);
 }
 
-function performIncrementalUpdate($link, $changes)
+function performIncrementalUpdate($changes)
 {
     echo " *      total:" . sizeof($changes) . "\n";
     $nUpdated = 0;
@@ -65,34 +79,31 @@ function performIncrementalUpdate($link, $changes)
 
         if ($change->change_type == 'delete') {
             //delete from DB
-
-            $sql = 'DELETE FROM `gk-waypointy` WHERE waypoint= ?';
-            $stmt = mysqli_prepare($link, $sql);
-            mysqli_stmt_bind_param($stmt, 's', $id);
-
-            if ($stmt->execute() === false) { // ooooPs we got an import error !
-                print("error sql : id:$id - query:$sql - mysqli_error:" . mysqli_error($link) . "\n");
-            }
+            $sql = 'DELETE FROM `gk-waypointy` WHERE waypoint = ?';
+            $stmt = prepareBindExecute('deleteWaypoint', $sql, 's', array($id));
             $nDeleted++;
             continue;
         }
 
         // Check for needed fields and make an update
         $sqlInsert = array();
+        $sqlTypes = array();
         $sqlValues = array();
         $sqlUpdate = array();
 
         if (isset($change->data->names)) {
-            $name = mysqli_real_escape_string($link, implode(' | ', (array)$change->data->names));
+            $name = implode(' | ', (array)$change->data->names);
             $sqlInsert [] = 'name';
+            $sqlTypes [] = 's';
             $sqlValues [] = $name;
-            $sqlUpdate [] = "name=?";
+            $sqlUpdate [] = 'name = ?';
         }
         if (isset($change->data->owner->username)) {
-            $owner = mysqli_real_escape_string($link, (string)$change->data->owner->username);
+            $owner = (string)$change->data->owner->username;
             $sqlInsert [] = 'owner';
+            $sqlTypes [] = 's';
             $sqlValues [] = $owner;
-            $sqlUpdate [] = "owner=?";
+            $sqlUpdate [] = 'owner = ?';
         }
         if (isset($change->data->location)) {
             $location = explode('|', $change->data->location);
@@ -100,30 +111,35 @@ function performIncrementalUpdate($link, $changes)
             $lat = floatval($location[1]);
 
             $sqlInsert [] = 'lon';
+            $sqlTypes [] = 'd';
             $sqlValues [] = $lon;
-            $sqlUpdate [] = "lon=?";
+            $sqlUpdate [] = 'lon = ?';
 
             $sqlInsert [] = 'lat';
+            $sqlTypes [] = 'd';
             $sqlValues [] = $lat;
-            $sqlUpdate [] = "lat=?";
+            $sqlUpdate [] = 'lat = ?';
         }
         if (isset($change->data->type)) {
-            $type = mysqli_real_escape_string($link, (string)$change->data->type);
+            $type = (string)$change->data->type;
             $sqlInsert [] = 'typ';
+            $sqlTypes [] = 's';
             $sqlValues [] = $type;
-            $sqlUpdate [] = "typ=?";
+            $sqlUpdate [] = 'typ = ?';
         }
         if (isset($change->data->country)) {
-            $country = mysqli_real_escape_string($link, (string)$change->data->country);
+            $country = (string)$change->data->country;
             $sqlInsert [] = 'kraj';
+            $sqlTypes [] = 's';
             $sqlValues [] = $country;
-            $sqlUpdate [] = "kraj=?";
+            $sqlUpdate [] = 'kraj = ?';
         }
         if (isset($change->data->url)) {
-            $url = mysqli_real_escape_string($link, (string)$change->data->url);
+            $url = (string)$change->data->url;
             $sqlInsert [] = 'link';
+            $sqlTypes [] = 's';
             $sqlValues [] = $url;
-            $sqlUpdate [] = "link=?";
+            $sqlUpdate [] = 'link = ?';
         }
 
         if (sizeof($sqlInsert) > 0) {
@@ -131,21 +147,17 @@ function performIncrementalUpdate($link, $changes)
             // So we need to trigger actual update only if at least one of our fields was changes.
 
             $sqlInsert [] = 'waypoint';
+            $sqlTypes [] = 's';
             $sqlValues [] = $id;
-            $sqlUpdate [] = "waypoint=?";
+            $sqlUpdate [] = 'waypoint = ?';
 
             $questionMarks = array_fill(0, count($sqlValues), '?');
 
-            $insertPart = '(' . implode(',', $sqlInsert) . ')';
-            $valuesPart = '(' . implode(',', $questionMarks) . ')';
+            $insertPart = implode(',', $sqlInsert);
+            $valuesPart = implode(',', $questionMarks);
             $onDupPart = implode(',', $sqlUpdate);
-            $sql = 'INSERT INTO `gk-waypointy` ' . $insertPart . ' VALUES ' . $valuesPart . ' ON DUPLICATE KEY UPDATE ' . $onDupPart;
-            $stmt = mysqli_prepare($link, $sql);
-            mysqli_stmt_bind_param($stmt, str_repeat("s", count($sqlValues) * 2), ...$sqlValues, ...$sqlValues);
-
-            if ($stmt->execute() === false) { // ooooPs we got an import error !
-                print("error sql : id:$id - query:$sql - mysqli_error:" . mysqli_error($link) . "\n");
-            }
+            $sql = "INSERT INTO `gk-waypointy` ($insertPart) VALUES ($valuesPart) ON DUPLICATE KEY UPDATE $onDupPart";
+            $stmt = prepareBindExecute('insertOrUpdateWaypoint', $sql, str_repeat(implode('', $sqlTypes), 2), array(...$sqlValues, ...$sqlValues));
             $nUpdated++;
         }
     }
@@ -155,46 +167,39 @@ function performIncrementalUpdate($link, $changes)
 }
 
 
-function insertFromFullDump($link, $folder)
+function insertFromFullDump($folder)
 {
     $index = json_decode(file_get_contents($folder . '/index.json'));
     $revision = $index->revision;
 
     foreach ($index->data_files as $piece) {
         $changes = json_decode(file_get_contents($folder . '/' . $piece));
-        performIncrementalUpdate($link, $changes);
+        performIncrementalUpdate($changes);
     }
     return $revision;
 }
 
 function getLastUpdate($service)
 {
-    $link = DBPConnect();
-    $sql = "SELECT `last_update` FROM `gk-waypointy-sync` WHERE `service_id` = ?";
-    $stmt = mysqli_prepare($link, $sql);
-    mysqli_stmt_bind_param($stmt, 's', $service);
-    $stmt->execute();
-    $stmt->bind_result($row);
-    $stmt->fetch();
-
-    if ($row === null) {
-        // Seems like no such key is present. Let's add it
-        $sql = "INSERT INTO `gk-waypointy-sync` (service_id) VALUES (?)";
-        $stmt = mysqli_prepare($link, $sql);
-        mysqli_stmt_bind_param($stmt, 's', $service);
-        mysqli_stmt_execute($stmt);
+    $sql = 'SELECT last_update FROM `gk-waypointy-sync` WHERE service_id = ?';
+    $stmt = prepareBindExecute('getLastUpdate', $sql, 's', array($service));
+    $stmt->store_result();
+    if ($stmt->num_rows !== 0) {
+        $stmt->bind_result($last_update);
+        return $last_update;
     }
-    return $row;
+
+    // Seems like no such key is present. Let's add it
+    $sql = 'INSERT INTO `gk-waypointy-sync` (service_id) VALUES (?)';
+    $stmt = prepareBindExecute('initLastUpdate', $sql, 's', array($service));
+    return null;
 }
 
 function setLastUpdate($service, $lastUpdate)
 {
     echo " *    new rev:" . $lastUpdate . "\n";
-    $link = DBPConnect();
-    $sql = "UPDATE `gk-waypointy-sync` SET `last_update`=? WHERE `service_id` = ?";
-    $stmt = mysqli_prepare($link, $sql);
-    mysqli_stmt_bind_param($stmt, 'ss', $lastUpdate, $service);
-    $stmt->execute();
+    $sql = 'UPDATE `gk-waypointy-sync` SET last_update = ? WHERE service_id = ?';
+    $stmt = prepareBindExecute('setLastUpdate', $sql, 'ss', array($lastUpdate, $service));
 }
 
 /**
@@ -302,7 +307,6 @@ foreach ($BAZY_OC as $key => $baza) {
         echo " *        url:" . $downloadUrl . "\n";
     }
 
-    $success = true;
     if ($fullResync) {
         $fullDumpPath = 'oc_dump_extracted';
         try {
@@ -314,9 +318,7 @@ foreach ($BAZY_OC as $key => $baza) {
         }
 
         // Connect to DB only when dump is ready, because downloading and extracting takes a lot of time
-        $link = DBPConnect();
-        $revision = insertFromFullDump($link, $fullDumpPath);
-        mysqli_close($link);
+        $revision = insertFromFullDump($fullDumpPath);
         deleteTree($fullDumpPath);
         setLastUpdate($key, $revision);
     } else {
@@ -337,9 +339,7 @@ foreach ($BAZY_OC as $key => $baza) {
             $changes = $json->changelog;
 
             if (sizeof($changes) > 0) {
-                $link = DBPConnect();
-                performIncrementalUpdate($link, $changes);
-                mysqli_close($link);
+                performIncrementalUpdate($changes);
             }
             $revision = $json->revision;
             $more = $json->more;
