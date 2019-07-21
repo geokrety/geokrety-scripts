@@ -121,9 +121,9 @@ function performIncrementalUpdate($changes)
             $lat = number_format(floatval($location[0]), 5, '.', '');
             $lon = number_format(floatval($location[1]), 5, '.', '');
 
-            $coordDiffer = False;
+            $coordDiffer = false;
             if ($wptLat != $lat or $wptLon != $lon) {
-                $coordDiffer = True;
+                $coordDiffer = true;
 
                 $sqlInsert [] = 'lon';
                 $sqlTypes [] = 'd';
@@ -224,7 +224,6 @@ function performIncrementalUpdate($changes)
     echo " *    updated:" . $nUpdated . "\n";
     echo " *    deleted:" . $nDeleted . "\n";
 }
-
 
 function insertFromFullDump($folder)
 {
