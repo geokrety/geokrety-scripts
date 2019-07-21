@@ -3,6 +3,9 @@
 <?php
 
 #die("Disabled by kumy 201701006");
+if ($_ENV['ENVIRONMENT'] !== 'prod') {
+    die('Skip sending mails as environment is not \'prod\'');
+}
 
 
 $ODKIEDY = 24; // jak stare niusy i dane (ile godzin)
