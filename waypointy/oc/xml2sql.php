@@ -60,7 +60,6 @@ function performIncrementalUpdate($changes)
     $nDeleted = 0;
 
     foreach ($changes as $change) {
-
         if ($change->object_type != 'geocache') {
             continue;
         }
@@ -75,6 +74,24 @@ function performIncrementalUpdate($changes)
             continue;
         }
 
+        $sql = 'SELECT lat, lon, alt, country, name, owner, typ, kraj, link, status FROM `gk-waypointy` WHERE waypoint = ?';
+        $stmt = prepareBindExecute('selectWaypoint', $sql, 's', array($id));
+        $stmt->store_result();
+        $stmt->bind_result(
+            $wptLat,
+            $wptLon,
+            $wptAlt,
+            $wptCountry,
+            $wptName,
+            $wptOwner,
+            $wptTyp,
+            $wptKraj,
+            $wptLink,
+            $wptStatus
+        );
+        $stmt->fetch();
+
+
         // Check for needed fields and make an update
         $sqlInsert = array();
         $sqlTypes = array();
@@ -83,53 +100,105 @@ function performIncrementalUpdate($changes)
 
         if (isset($change->data->names)) {
             $name = implode(' | ', (array)$change->data->names);
-            $sqlInsert [] = 'name';
-            $sqlTypes [] = 's';
-            $sqlValues [] = $name;
-            $sqlUpdate [] = 'name = ?';
+            if ($wptName != $name) {
+                $sqlInsert [] = 'name';
+                $sqlTypes [] = 's';
+                $sqlValues [] = $name;
+                $sqlUpdate [] = 'name = ?';
+            }
         }
         if (isset($change->data->owner->username)) {
             $owner = (string)$change->data->owner->username;
-            $sqlInsert [] = 'owner';
-            $sqlTypes [] = 's';
-            $sqlValues [] = $owner;
-            $sqlUpdate [] = 'owner = ?';
+            if ($wptOwner != $owner) {
+                $sqlInsert [] = 'owner';
+                $sqlTypes [] = 's';
+                $sqlValues [] = $owner;
+                $sqlUpdate [] = 'owner = ?';
+            }
         }
         if (isset($change->data->location)) {
             $location = explode('|', $change->data->location);
-            $lon = floatval($location[0]);
-            $lat = floatval($location[1]);
+            $lat = number_format(floatval($location[0]), 5, '.', '');
+            $lon = number_format(floatval($location[1]), 5, '.', '');
 
-            $sqlInsert [] = 'lon';
-            $sqlTypes [] = 'd';
-            $sqlValues [] = $lon;
-            $sqlUpdate [] = 'lon = ?';
+            $coordDiffer = False;
+            if ($wptLat != $lat or $wptLon != $lon) {
+                $coordDiffer = True;
 
-            $sqlInsert [] = 'lat';
-            $sqlTypes [] = 'd';
-            $sqlValues [] = $lat;
-            $sqlUpdate [] = 'lat = ?';
+                $sqlInsert [] = 'lon';
+                $sqlTypes [] = 'd';
+                $sqlValues [] = $lon;
+                $sqlUpdate [] = 'lon = ?';
+
+                $sqlInsert [] = 'lat';
+                $sqlTypes [] = 'd';
+                $sqlValues [] = $lat;
+                $sqlUpdate [] = 'lat = ?';
+            }
+
+            if ($coordDiffer or is_null($wptCountry) or $wptCountry === '') {
+                $countryCode = \Geokrety\Service\CountryService::getCountryCode(array('lat' => $lat, 'lon' => $lon));
+                $sqlInsert [] = 'country';
+                $sqlTypes [] = 's';
+                $sqlValues [] = $countryCode;
+                $sqlUpdate [] = 'country = ?';
+            }
+
+            if ($coordDiffer or is_null($wptAlt) or $wptAlt === '') {
+                $elevation = \Geokrety\Service\ElevationService::getElevation(array('lat' => $lat, 'lon' => $lon));
+                $sqlInsert [] = 'alt';
+                $sqlTypes [] = 'i';
+                $sqlValues [] = $elevation;
+                $sqlUpdate [] = 'alt = ?';
+            }
         }
         if (isset($change->data->type)) {
             $type = (string)$change->data->type;
-            $sqlInsert [] = 'typ';
-            $sqlTypes [] = 's';
-            $sqlValues [] = $type;
-            $sqlUpdate [] = 'typ = ?';
+            if ($wptTyp != $type) {
+                $sqlInsert [] = 'typ';
+                $sqlTypes [] = 's';
+                $sqlValues [] = $type;
+                $sqlUpdate [] = 'typ = ?';
+            }
         }
         if (isset($change->data->country)) {
             $country = (string)$change->data->country;
-            $sqlInsert [] = 'kraj';
-            $sqlTypes [] = 's';
-            $sqlValues [] = $country;
-            $sqlUpdate [] = 'kraj = ?';
+            if ($wptKraj != $country) {
+                $sqlInsert [] = 'kraj';
+                $sqlTypes [] = 's';
+                $sqlValues [] = $country;
+                $sqlUpdate [] = 'kraj = ?';
+            }
         }
         if (isset($change->data->url)) {
             $url = (string)$change->data->url;
-            $sqlInsert [] = 'link';
-            $sqlTypes [] = 's';
-            $sqlValues [] = $url;
-            $sqlUpdate [] = 'link = ?';
+            if ($wptLink != $url) {
+                $sqlInsert [] = 'link';
+                $sqlTypes [] = 's';
+                $sqlValues [] = $url;
+                $sqlUpdate [] = 'link = ?';
+            }
+        }
+        if (isset($change->data->status)) {
+            switch ((string)$change->data->status) {
+                case 'Available':
+                    $status = 1;
+                    break;
+                case 'Temporarily unavailable':
+                    $status = 2;
+                    break;
+                case 'Archived':
+                    $status = 3;
+                    break;
+                default:
+                    $status = 0;
+            }
+            if ($wptStatus != $status) {
+                $sqlInsert [] = 'status';
+                $sqlTypes [] = 'i';
+                $sqlValues [] = $status;
+                $sqlUpdate [] = 'status = ?';
+            }
         }
 
         if (sizeof($sqlInsert) > 0) {
