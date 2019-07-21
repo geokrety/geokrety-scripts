@@ -4,24 +4,9 @@
 include_once('../../konfig-tools.php');
 require_once "$geokrety_www/__sentry.php";
 
-function DBPConnect()
+function prepareBindExecute(string $action, string $sql, string $bindParams = null, array $bindValues = null)
 {
-    //return mysqli_connect('localhost', 'root', '', 'geokrety-db');
-    return GKDB::getLink();
-}
-
-function prepareBindExecute(string $action, string $sql, string $bindParams = null, array $bindValues = null) {
-    $link = DBPConnect();
-    if (!($stmt = $link->prepare($sql))) {
-        throw new \Exception($action.' prepare failed: ('.$link->errno.') '.$link->error);
-    }
-    if (!is_null($bindValues) && !$stmt->bind_param($bindParams, ...$bindValues)) {
-        throw new \Exception($action.' binding parameters failed: ('.$stmt->errno.') '.$stmt->error);
-    }
-    if (!$stmt->execute()) {
-        throw new \Exception($action.' execute failed: ('.$stmt->errno.') '.$stmt->error);
-    }
-    return $stmt;
+    return \GKDB::prepareBindExecute($action, $sql, $bindParams, $bindValues);
 }
 
 /**
@@ -162,7 +147,7 @@ function performIncrementalUpdate($changes)
             $valuesPart = implode(',', $questionMarks);
             $onDupPart = implode(',', $sqlUpdate);
             $sql = "INSERT INTO `gk-waypointy` ($insertPart) VALUES ($valuesPart) ON DUPLICATE KEY UPDATE $onDupPart";
-            $stmt = prepareBindExecute('insertOrUpdateWaypoint', $sql, str_repeat(implode('', $sqlTypes), 2), array(...$sqlValues, ...$sqlValues));
+            $stmt = prepareBindExecute('insertOrUpdateWaypoint', $sql, str_repeat(implode('', $sqlTypes), 2), array_merge($sqlValues, $sqlValues));
             $nUpdated++;
         }
     }
@@ -191,6 +176,7 @@ function getLastUpdate($service)
     $stmt->store_result();
     if ($stmt->num_rows !== 0) {
         $stmt->bind_result($last_update);
+        $stmt->fetch();
         return $last_update;
     }
 
@@ -243,7 +229,7 @@ if (getenv("OC_PL_OKAPI_CONSUMER_KEY")) {
     $BAZY_OC['OC_PL']['key'] = getenv("OC_PL_OKAPI_CONSUMER_KEY");
     $BAZY_OC['OC_PL']['url'] = "https://opencaching.pl/okapi/services/replicate/changelog?consumer_key=" . $BAZY_OC['OC_PL']['key'] . "&since=";
     $BAZY_OC['OC_PL']['full_url'] = "https://opencaching.pl/okapi/services/replicate/fulldump?pleeaase=true&consumer_key=" . $BAZY_OC['OC_PL']['key'];
-// Also can be local path
+    // Also can be local path
 #$BAZY_OC['OC_PL']['full_url'] = "C:\Users\Downloads\okapi-dump-r7198164.tar.bz2";
 }
 
@@ -294,7 +280,7 @@ foreach ($BAZY_OC as $key => $baza) {
     $nbError = 0;
 
     $downloadUrl = $baza['full_url'];
-    if (isset ($GLOBALS['argv'][1]) && $GLOBALS['argv'][1] == 'full') {
+    if (isset($GLOBALS['argv'][1]) && $GLOBALS['argv'][1] == 'full') {
         $fullResync = true;
     } else {
         $lastUpdate = getLastUpdate($key);
