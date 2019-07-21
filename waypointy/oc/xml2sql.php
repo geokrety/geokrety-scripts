@@ -35,9 +35,14 @@ function deleteTree($dir)
     if (empty($dir) or !$dir) {
         return;
     }
+    $pathLength = strlen($dir);
     $files = array_diff(scandir($dir), array('.', '..'));
     foreach ($files as $file) {
-        (is_dir("$dir/$file")) ? deleteTree("$dir/$file") : unlink("$dir/$file");
+        $file_ = realpath("$dir/$file");
+        if (strncmp($file_, $pathLength) !== 0) {
+            throw new Exception("Deleting file '$file' would have gone out of base directory ('$dir') => '$file_'.");
+        }
+        (is_dir($file_)) ? deleteTree($file_) : unlink($file_);
     }
     rmdir($dir);
 }
@@ -224,7 +229,7 @@ function saveAndExtractDumpFile($url, $output)
 
     // Extract tar
     //For at least .pl Phar complains that archive is corrupted :(
-    // Maybe use exec on lin?
+    // Maybe use exec on linux?
     //exec('mkdir TestBlable && tar -C TestBlable -xvf tempfile.tar');
 
     $phar = new PharData('tempfile.tar');
@@ -347,5 +352,3 @@ foreach ($BAZY_OC as $key => $baza) {
         }
     }
 }
-
-?>
