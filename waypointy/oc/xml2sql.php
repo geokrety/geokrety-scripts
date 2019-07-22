@@ -70,6 +70,7 @@ function performIncrementalUpdate($changes)
             //delete from DB
             $sql = 'DELETE FROM `gk-waypointy` WHERE waypoint = ?';
             $stmt = prepareBindExecute('deleteWaypoint', $sql, 's', array($id));
+            $stmt->close();
             $nDeleted++;
             continue;
         }
@@ -90,6 +91,7 @@ function performIncrementalUpdate($changes)
             $wptStatus
         );
         $stmt->fetch();
+        $stmt->close();
 
 
         // Check for needed fields and make an update
@@ -212,11 +214,12 @@ function performIncrementalUpdate($changes)
 
             $questionMarks = array_fill(0, count($sqlValues), '?');
 
-            $insertPart = implode(',', $sqlInsert);
-            $valuesPart = implode(',', $questionMarks);
-            $onDupPart = implode(',', $sqlUpdate);
+            $insertPart = implode(', ', $sqlInsert);
+            $valuesPart = implode(', ', $questionMarks);
+            $onDupPart = implode(', ', $sqlUpdate);
             $sql = "INSERT INTO `gk-waypointy` ($insertPart) VALUES ($valuesPart) ON DUPLICATE KEY UPDATE $onDupPart";
             $stmt = prepareBindExecute('insertOrUpdateWaypoint', $sql, str_repeat(implode('', $sqlTypes), 2), array_merge($sqlValues, $sqlValues));
+            $stmt->close();
             $nUpdated++;
         }
     }
@@ -245,12 +248,14 @@ function getLastUpdate($service)
     if ($stmt->num_rows !== 0) {
         $stmt->bind_result($last_update);
         $stmt->fetch();
+        $stmt->close();
         return $last_update;
     }
 
     // Seems like no such key is present. Let's add it
     $sql = 'INSERT INTO `gk-waypointy-sync` (service_id) VALUES (?)';
     $stmt = prepareBindExecute('initLastUpdate', $sql, 's', array($service));
+    $stmt->close();
     return null;
 }
 
@@ -259,6 +264,7 @@ function setLastUpdate($service, $lastUpdate)
     echo " *    new rev:" . $lastUpdate . "\n";
     $sql = 'UPDATE `gk-waypointy-sync` SET last_update = ? WHERE service_id = ?';
     $stmt = prepareBindExecute('setLastUpdate', $sql, 'ss', array($lastUpdate, $service));
+    $stmt->close();
 }
 
 /**
