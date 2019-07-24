@@ -125,7 +125,7 @@ function performIncrementalUpdate($changes)
             $lon = number_format(floatval($location[1]), 5, '.', '');
 
             $coordDiffer = false;
-            if ($wptLat != $lat or $wptLon != $lon) {
+            if (strval($wptLat) != strval($lat) or strval($wptLon) != strval($lon)) {
                 $coordDiffer = true;
 
                 $sqlInsert [] = 'lon';
@@ -139,7 +139,7 @@ function performIncrementalUpdate($changes)
                 $sqlUpdate [] = 'lat = ?';
             }
 
-            if ($coordDiffer or is_null($wptCountry) or $wptCountry === '') {
+            if ($coordDiffer or is_null($wptCountry) or $wptCountry === '' or $wptCountry == 'xyz' or $wptCountry == 'err') {
                 $countryCode = \Geokrety\Service\CountryService::getCountryCode(array('lat' => $lat, 'lon' => $lon));
                 $sqlInsert [] = 'country';
                 $sqlTypes [] = 's';
@@ -147,7 +147,7 @@ function performIncrementalUpdate($changes)
                 $sqlUpdate [] = 'country = ?';
             }
 
-            if ($coordDiffer or is_null($wptAlt) or $wptAlt === '') {
+            if ($coordDiffer or is_null($wptAlt) or $wptAlt === '' or $wptAlt < -2000) { // TODO replace with class constant
                 $elevation = \Geokrety\Service\ElevationService::getElevation(array('lat' => $lat, 'lon' => $lon));
                 $sqlInsert [] = 'alt';
                 $sqlTypes [] = 'i';
@@ -383,7 +383,6 @@ foreach ($BAZY_OC as $key => $baza) {
             continue;
         }
 
-        // Connect to DB only when dump is ready, because downloading and extracting takes a lot of time
         $revision = insertFromFullDump($fullDumpPath);
         deleteTree($fullDumpPath);
         setLastUpdate($key, $revision);
