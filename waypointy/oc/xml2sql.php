@@ -20,11 +20,12 @@ function deleteTree($dir)
     if (empty($dir) or !$dir) {
         return;
     }
+    $dir = realpath($dir);
     $pathLength = strlen($dir);
     $files = array_diff(scandir($dir), array('.', '..'));
     foreach ($files as $file) {
         $file_ = realpath("$dir/$file");
-        if (strncmp($file_, $pathLength) !== 0) {
+        if (strncmp($file_, $dir, $pathLength) !== 0) {
             throw new Exception("Deleting file '$file' would have gone out of base directory ('$dir') => '$file_'.");
         }
         (is_dir($file_)) ? deleteTree($file_) : unlink($file_);
