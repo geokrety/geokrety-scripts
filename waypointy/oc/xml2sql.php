@@ -280,21 +280,22 @@ function saveAndExtractDumpFile($url, $output)
     $temp = "tempfile.tar.bz2";
     downloadFile($url, $temp);
     // full dump gives .tar.bz2 file...
+    exec("mkdir $output && tar -C $output -xf $temp");
 
-    // Save bz2 file
-    $bz = bzopen($temp, "r");
-    $res = fopen("tempfile.tar", "w");
-    $copied = stream_copy_to_stream($bz, $res);
-    fclose($res);
-    fclose($bz);
-
-    // Extract tar
-    //For at least .pl Phar complains that archive is corrupted :(
-    // Maybe use exec on linux?
-    //exec('mkdir TestBlable && tar -C TestBlable -xvf tempfile.tar');
-
-    $phar = new PharData('tempfile.tar');
-    $phar->extractTo($output); // extract all files
+    // // Save bz2 file
+    // $bz = bzopen($temp, "r");
+    // $res = fopen("tempfile.tar", "w");
+    // $copied = stream_copy_to_stream($bz, $res);
+    // fclose($res);
+    // fclose($bz);
+    //
+    // // Extract tar
+    // //For at least .pl Phar complains that archive is corrupted :(
+    // // Maybe use exec on linux?
+    // //exec('mkdir TestBlable && tar -C TestBlable -xvf tempfile.tar');
+    //
+    // $phar = new PharData('tempfile.tar');
+    // $phar->extractTo($output); // extract all files
 
     // Finally we got 2+ Gb of random json files. Let's parse
 }
