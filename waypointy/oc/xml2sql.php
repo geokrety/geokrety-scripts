@@ -4,7 +4,7 @@
 include_once('../../konfig-tools.php');
 require_once "$geokrety_www/__sentry.php";
 
-function prepareBindExecute(string $action, string $sql, string $bindParams = null, array $bindValues = null)
+function prepareBindExecute($action, $sql, $bindParams = null, $bindValues = null)
 {
     return \GKDB::prepareBindExecute($action, $sql, $bindParams, $bindValues);
 }
