@@ -26,3 +26,4 @@ RUN mv /opt/geokrety/geokrety-crontab /etc/cron.d/geokrety-cron \
   && chmod 755 /opt/geokrety/init.sh
 
 CMD ["/opt/geokrety/init.sh"]
+HEALTHCHECK NONE
