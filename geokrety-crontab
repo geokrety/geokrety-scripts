@@ -34,9 +34,8 @@ LOGFILE=/proc/1/fd/1
 */17 * * * * root cd $HOME/pop/ && echo ./procesuj.php >> "$LOGFILE" && /usr/local/bin/php ./procesuj.php >> "$LOGFILE"
 
 */21  * * * * root cd $HOME/geonames/ && echo ./geonames-ruchy-alt.php >> "$LOGFILE" && timeout 300s /usr/local/bin/php ./geonames-ruchy-alt.php >> "$LOGFILE" 2>&1
-##### TODO use geo.kumy.org
-
 */28 * * * * root cd $HOME/geonames/ && echo ./geonames-waypointy.php >> "$LOGFILE" && timeout 300s /usr/local/bin/php ./geonames-waypointy.php >> "$LOGFILE" 2>&1
+28 16 * * * root cd $HOME/geonames/ && echo ./geonames-ruchy-country.php >> "$LOGFILE" && timeout 300s /usr/local/bin/php ./geonames-ruchy-country.php >> "$LOGFILE" 2>&1
 
 6,36 6-23 * * * root cd $HOME/statystyki/ && echo ./statystyczka.php >> "$LOGFILE" && nice -n 10 /usr/local/bin/php ./statystyczka.php >> "$LOGFILE" 2>&1
 36   0-5  * * * root cd $HOME/statystyki/ && echo ./statystyczka.php >> "$LOGFILE" && nice -n 14 /usr/local/bin/php ./statystyczka.php >> "$LOGFILE" 2>&1
