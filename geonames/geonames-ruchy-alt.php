@@ -5,45 +5,35 @@ include_once("../konfig-tools.php");
 include_once("$geokrety_www/templates/konfig.php");
 require_once "$geokrety_www/__sentry.php";
 
-$link = GKDB::getLink();
+const START_RUCHY_ID = 1809223; // TODO move this in general konfig
 
-// -- missing - altitude
+$sql = <<<EOSQL
+SELECT  ruch_id, lat, lon
+FROM    `gk-ruchy`
+WHERE   logtype not in ('2', '1', '4')
+AND     alt < -2000
+AND     ruch_id > ?
+EOSQL;
 
-$link = GKDB::getLink();
+$stmt = \GKDB::prepareBindExecute('selectRuchyWithoutCountry', $sql, 'i', array(START_RUCHY_ID));
+$stmt->store_result();
+$stmt->bind_result(
+    $ruch_id,
+    $lat,
+    $lon
+);
+while ($stmt->fetch()) {
+    echo "$ruch_id, $lat, $lon \t→ ";
 
-// get ruchy trip step without good altitude
-$result = mysqli_query($link, "SELECT ruch_id, lat, lon FROM `gk-ruchy` WHERE `logtype` not in ('2', '1', '4') AND (alt<'-2000')");
+    $alt = Geokrety\Service\ElevationService::getElevation(array('lat' => $lat, 'lon' => $lon));
 
+    echo "[$alt]".PHP_EOL;
 
-while ($row = mysqli_fetch_array($result)) {
-    list($ruch_id, $lat, $lon) = $row;
-
-    echo "$ruch_id, $lat, $lon:: SRTM... ";
-    if (is_null($lat) || is_null($lon)) {
-      echo "skip\n ";
-      continue;
-    }
-
-    $handle = fopen("https://geo.kumy.org/api/getElevation?lat=$lat&lon=$lon", "rb");
-    $alt = trim(fread($handle, 5));
-
-    fclose($handle);
-    if (!is_numeric($alt) or $alt < -3000) {
-        echo "SRTM failed.";
-    }
-    if (!is_numeric($alt) or $alt < -3000) {
-        $alt = '-2000';
-    }
-
-    echo "$alt\n ";
-
-
-    $sql = "UPDATE `gk-ruchy` SET `alt` = '$alt' WHERE `ruch_id` = '$ruch_id' LIMIT 1";
-    //echo "$sql\n";
-    $result2 = mysqli_query($link, $sql);
-
-    sleep(0.2);
+    $sql = 'UPDATE `gk-ruchy` SET alt = ? WHERE ruch_id = ? LIMIT 1';
+    $stmtUpdate = \GKDB::prepareBindExecute('updateRuchyCountry', $sql, 'di', array($alt, $ruch_id));
+    $stmtUpdate->close();
+    $nbUpdated++;
 }
+$stmt->close();
 
-
-mysqli_close($link);
+echo "nbUpdated: $nbUpdated\n";
