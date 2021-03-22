@@ -2,7 +2,7 @@
 <?php
 
 /*
-*  This is a script to synchronize list of caches from geocaching.su (ex-USSR geocaching website) 
+*  This is a script to synchronize list of caches from geocaching.su (ex-USSR geocaching website)
 *  with Geokrety waypoints database.
 *  Script is being run via cron every 2 hours on geokrey.org side.
 */
@@ -42,7 +42,7 @@ foreach ($BAZY as $baza) {
         $name = trim(mysqli_escape_string($link, strtr((string) $cache->name, array('"' => ''))));
         $lat = (string) $cache->position['lat'];
         $lon = (string) $cache->position['lon'];
-        $owner = trim(mysqli_escape_string($link, strtr((string) $cache->autor, array('"' => ''))));
+        $owner = trim(mysqli_escape_string($link, strtr((string) $cache->author, array('"' => ''))));
         $waypoint = (string) $cache->code;
 
         $linka = 'https://geocaching.su/?pn=101&cid=' . substr($waypoint, 2, 10);
