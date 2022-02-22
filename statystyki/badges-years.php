@@ -56,9 +56,8 @@ $result = mysqli_query($link, $sql);
 
 while ($row = mysqli_fetch_row($result)) {
     list($nick, $email, $wysylac, $userid, $count) = $row;
-    echo "$nick $userid $count #$rank\n";
-
     $rank++;
+    echo "$nick $userid $count #$rank\n";
     $stats.="<tr><td>$rank</td><td><a href='/mypage.php?userid=$userid'>$nick</a></td><td>$count</td></tr>\n";
 
     $tresc="Hi $nick,
@@ -99,7 +98,7 @@ Your GeoKrety Team :)
     )
     VALUES (
     '$userid',
-    CURRENT_TIMESTAMP , 'Top $top_ile droppers in $rok ($count, rank #$rank)', 'top${top_ile}-mover-$rok.png'
+    CURRENT_TIMESTAMP , 'Top $top_ile droppers in $rok ($count, rank #$rank)', 'top${top_ile}-mover-$rok.svg'
     );";
 
     $result2 = mysqli_query($link, $sql_ins);
