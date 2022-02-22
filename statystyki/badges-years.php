@@ -6,9 +6,23 @@
 
 <?php
 
-$rok='2017';
-$top_ile=100;
-$rank = 10;
+$rok='2021';
+
+# TOP 10
+$top_ile=10;
+$rank = 0;
+$limit = 'LIMIT 10';
+
+// # TOP 100
+// $top_ile=100;
+// $rank = 10;
+// $limit = 'LIMIT 11, 90';
+
+// ALL
+//top_ile=100;
+//rank = 0;
+//limit = 'LIMIT 100';
+
 
 $headers = 'From: GeoKrety <geokrety@gmail.com>' . "\r\n";
 $headers .= 'Return-Path: <geokrety@gmail.com>' . "\r\n";
@@ -35,21 +49,18 @@ WHERE `typ` != '2'
 GROUP BY `gk-users`.`user`
 ORDER BY ile DESC
 
-LIMIT 10, 90";  // dla top 100 i wtedy top_ile=100
-//LIMIT 100";
-//LIMIT 10";
+$limit";
 
 $result = mysqli_query($link, $sql);
 
 
 while ($row = mysqli_fetch_row($result)) {
     list($nick, $email, $wysylac, $userid, $count) = $row;
-    echo "$nick $userid $count\n";
+    echo "$nick $userid $count #$rank\n";
 
     $rank++;
     $stats.="<tr><td>$rank</td><td><a href='/mypage.php?userid=$userid'>$nick</a></td><td>$count</td></tr>\n";
 
-    /*
     $tresc="Hi $nick,
 
 It is our pleasure to inform, that you are among
@@ -66,13 +77,13 @@ Your GeoKrety Team :)
 ";
 
 
+/*
 
     echo $tresc;
 
 
     if($wysylac==1){
-    //   $email = "stefaniak@gmail.com";
-    //   $email = "mathieu@alorent.com";
+       $email = "geokrety@gmail.com";
        mail($email, "[GeoKrety] Top $top_ile droppers in $rok!", $tresc, $headers);
        $sleep = rand(1, 10);
        echo "($rank) Sleep $sleep\n";
@@ -98,8 +109,8 @@ Your GeoKrety Team :)
 
 
 }
-//if ($stats!='') {
+// if ($stats!='') {
 //    file_put_contents("$geokrety_www/templates/stats/year/$rok.html", $stats);
-//}
+// }
 
 ?>
