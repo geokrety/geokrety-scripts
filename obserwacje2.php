@@ -2,9 +2,8 @@
 
 <?php
 
-#die("Disabled by kumy 201701006");
-if ($_ENV['ENVIRONMENT'] !== 'prod') {
-    die('Skip sending mails as environment is not \'prod\'');
+if ($_ENV['ENVIRONMENT'] !== 'legacy-prod') {
+    die('Skip sending mails as environment is not \'legacy-prod\'');
 }
 
 
